@@ -1,29 +1,16 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, Link, useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import { authService } from '../services/auth'
 
-function Login() {
+function Register() {
   const navigate = useNavigate()
-  const location = useLocation()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    fullName: '',
   })
   const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
-
-  useEffect(() => {
-    // Check if redirected from register with success message
-    if (location.state?.message) {
-      setMessage(location.state.message)
-    }
-    
-    // If already authenticated, redirect to dashboard
-    if (authService.isAuthenticated()) {
-      navigate('/')
-    }
-  }, [location, navigate])
 
   const handleChange = (e) => {
     setFormData({
@@ -31,21 +18,19 @@ function Login() {
       [e.target.name]: e.target.value,
     })
     setError('')
-    setMessage('')
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    setMessage('')
     setLoading(true)
 
     try {
-      await authService.login(formData.email, formData.password)
-      // Login successful, redirect to dashboard
-      navigate('/')
+      await authService.register(formData.email, formData.password, formData.fullName)
+      // Registration successful, redirect to login
+      navigate('/login', { state: { message: 'Registration successful! Please login.' } })
     } catch (err) {
-      setError(err.response?.data?.detail || 'Login failed. Please check your credentials.')
+      setError(err.response?.data?.detail || 'Registration failed. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -60,21 +45,8 @@ function Login() {
       borderRadius: '8px',
       boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
     }}>
-      <h1 style={{ marginBottom: '1.5rem', color: '#1a1a1a' }}>Login</h1>
+      <h1 style={{ marginBottom: '1.5rem', color: '#1a1a1a' }}>Register</h1>
       
-      {message && (
-        <div style={{
-          padding: '0.75rem',
-          marginBottom: '1rem',
-          backgroundColor: '#efe',
-          color: '#3c3',
-          borderRadius: '4px',
-          border: '1px solid #cfc'
-        }}>
-          {message}
-        </div>
-      )}
-
       {error && (
         <div style={{
           padding: '0.75rem',
@@ -89,6 +61,26 @@ function Login() {
       )}
 
       <form onSubmit={handleSubmit}>
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>
+            Full Name
+          </label>
+          <input
+            type="text"
+            name="fullName"
+            value={formData.fullName}
+            onChange={handleChange}
+            required
+            style={{
+              width: '100%',
+              padding: '0.75rem',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '1rem'
+            }}
+          />
+        </div>
+
         <div style={{ marginBottom: '1rem' }}>
           <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>
             Email
@@ -108,6 +100,7 @@ function Login() {
             }}
           />
         </div>
+
         <div style={{ marginBottom: '1rem' }}>
           <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>
             Password
@@ -118,6 +111,7 @@ function Login() {
             value={formData.password}
             onChange={handleChange}
             required
+            minLength={8}
             style={{
               width: '100%',
               padding: '0.75rem',
@@ -126,7 +120,11 @@ function Login() {
               fontSize: '1rem'
             }}
           />
+          <small style={{ color: '#666', fontSize: '0.875rem' }}>
+            Minimum 8 characters
+          </small>
         </div>
+
         <button
           type="submit"
           disabled={loading}
@@ -142,19 +140,19 @@ function Login() {
             marginBottom: '1rem'
           }}
         >
-          {loading ? 'Logging in...' : 'Login'}
+          {loading ? 'Registering...' : 'Register'}
         </button>
       </form>
 
       <p style={{ textAlign: 'center', color: '#666' }}>
-        Don't have an account?{' '}
-        <Link to="/register" style={{ color: '#2196F3', textDecoration: 'none' }}>
-          Register
+        Already have an account?{' '}
+        <Link to="/login" style={{ color: '#2196F3', textDecoration: 'none' }}>
+          Login
         </Link>
       </p>
     </div>
   )
 }
 
-export default Login
+export default Register
 
