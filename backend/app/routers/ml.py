@@ -3,8 +3,7 @@ ML inference and detection routes.
 """
 from typing import Optional
 from fastapi import APIRouter, HTTPException, status, Depends, Query, UploadFile, File
-import os
-
+import os 
 from app.models.ml_detection import MLInferenceRequest, MLInferenceResponse, MLDetectionResponse
 from app.services.ml_service import run_inference, get_detections, get_detection_by_id
 from app.middleware.auth import get_current_user
