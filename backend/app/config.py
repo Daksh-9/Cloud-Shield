@@ -1,10 +1,9 @@
 """
-Configuration management using environment variables.
+Configuration management using pydantic-settings.
 """
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 from pydantic import field_validator
-
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
@@ -24,7 +23,6 @@ class Settings(BaseSettings):
     @field_validator('CORS_ORIGINS', mode='before')
     @classmethod
     def parse_cors_origins(cls, v):
-        """Parse comma-separated CORS origins from environment variable."""
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(',')]
         return v
@@ -33,15 +31,16 @@ class Settings(BaseSettings):
     MONGODB_URL: str = "mongodb://localhost:27017"
     MONGODB_DB_NAME: str = "cloud_shield"
     
-    # JWT (will be used in Phase 2)
+    # JWT
     JWT_SECRET_KEY: str = "your-secret-key-change-in-production"
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-
+    # Pydantic v2 model configuration
+    model_config = SettingsConfigDict(
+        env_file=".env", 
+        case_sensitive=True,
+        extra="ignore"
+    )
 
 settings = Settings()
-
