@@ -1,42 +1,47 @@
-"""
-MongoDB database connection and management.
-"""
+import os
 from motor.motor_asyncio import AsyncIOMotorClient
-from typing import Optional
+import certifi
+from dotenv import load_dotenv
+from pathlib import Path
 
-from app.config import settings
+# --- FIX: Explicitly tell Python where the .env file is ---
+# This looks for .env in the folder above 'app' (which is 'backend')
+env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
-# Global database client
-client: Optional[AsyncIOMotorClient] = None
-database = None
+MONGO_URI = os.getenv("MONGO_URI")
+DB_NAME = "CloudShield"
 
+# Debugging print to confirm it works
+print(f"DEBUG: Loading .env from: {env_path}")
+print(f"DEBUG: MONGO_URI is: {MONGO_URI}")
+
+client = None
+db = None
 
 async def connect_to_mongo():
-    """Create database connection."""
-    global client, database
-    
-    try:
-        client = AsyncIOMotorClient(settings.MONGODB_URL)
-        database = client[settings.MONGODB_DB_NAME]
-        
-        # Test connection
-        await client.admin.command('ping')
-        print(f"✓ Connected to MongoDB: {settings.MONGODB_DB_NAME}")
-    except Exception as e:
-        print(f"✗ Failed to connect to MongoDB: {e}")
-        raise
+    global client, db
+    if not MONGO_URI:
+        raise ValueError("❌ MONGO_URI is missing! Check your .env file.")
 
+    try:
+        print("Connecting to MongoDB...")
+        client = AsyncIOMotorClient(
+            MONGO_URI,
+            tlsCAFile=certifi.where()
+        )
+        db = client[DB_NAME]
+        await client.admin.command('ping')
+        print("✅ Successfully connected to MongoDB!")
+    except Exception as e:
+        print(f"❌ Error connecting to MongoDB: {e}")
+        raise e
 
 async def close_mongo_connection():
-    """Close database connection."""
     global client
-    
     if client:
         client.close()
-        print("✓ MongoDB connection closed")
-
+        print("MongoDB connection closed.")
 
 def get_database():
-    """Get database instance."""
-    return database
-
+    return db

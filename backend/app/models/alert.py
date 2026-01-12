@@ -1,74 +1,101 @@
 """
-Comprehensive Alert model for security incident management.
+Alert model and schemas for security incident management.
 """
 from datetime import datetime
-from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, Field
+from typing import Optional, List, Dict, Any
+from pydantic import BaseModel, Field, ConfigDict
 from bson import ObjectId
 from app.models.user import PyObjectId
 
-# --- Nested Schemas ---
+# --- Pydantic Schemas for API ---
 
-class AlertSource(BaseModel):
-    ips: List[str] = []
-    countries: List[str] = []
-    count: int = 0
+class AlertCreate(BaseModel):
+    """Schema for creating a new alert."""
+    title: str
+    description: str
+    severity: str
+    alert_type: str
+    source: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+    related_log_ids: Optional[List[str]] = None
 
-class AlertTarget(BaseModel):
-    ip: str
-    port: Optional[int] = None
-    service: Optional[str] = None
+class AlertUpdate(BaseModel):
+    """Schema for updating an alert."""
+    status: Optional[str] = None
+    notes: Optional[str] = None
+    assigned_to: Optional[str] = None
 
-class AlertMetrics(BaseModel):
-    packets_per_sec: float = 0.0
-    bytes_per_sec: float = 0.0
-    duration_seconds: float = 0.0
-    peak_rate: float = 0.0
+class AlertResponse(BaseModel):
+    """Schema for alert response."""
+    id: str = Field(alias="_id")
+    title: str
+    description: str
+    severity: str
+    alert_type: str
+    source: Optional[str] = None
+    metadata: Dict[str, Any] = {}
+    related_log_ids: List[str] = []
+    status: str
+    created_by: Optional[str] = None
+    assigned_to: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
 
-class AlertAction(BaseModel):
-    type: str  # 'ip_blocked', 'rate_limited', 'notification_sent'
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-    performed_by: Optional[PyObjectId] = None
-    details: Dict[str, Any] = {}
+    model_config = ConfigDict(
+        populate_by_name=True,
+        from_attributes=True,
+        json_encoders={ObjectId: str}
+    )
 
-class AlertNote(BaseModel):
-    user_id: PyObjectId
-    username: str
-    text: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+# --- Database Model ---
 
-# --- Main Alert Schemas ---
+class AlertInDB:
+    """
+    Database model for Alert.
+    Matches the usage in app/services/alert_service.py
+    """
+    def __init__(
+        self, 
+        title: str, 
+        description: str, 
+        severity: str, 
+        alert_type: str, 
+        source: Optional[str] = None, 
+        metadata: Optional[Dict[str, Any]] = None, 
+        related_log_ids: Optional[List[str]] = None, 
+        created_by: Optional[str] = None
+    ):
+        self.title = title
+        self.description = description
+        self.severity = severity
+        self.alert_type = alert_type
+        self.source = source
+        self.metadata = metadata or {}
+        self.related_log_ids = related_log_ids or []
+        self.created_by = created_by
+        
+        # Default fields
+        self.status = "open"
+        self.assigned_to = None
+        self.notes = None
+        self.created_at = datetime.utcnow()
+        self.updated_at = datetime.utcnow()
 
-class AlertBase(BaseModel):
-    alert_id: str = Field(..., description="Unique ID: ALT-YYYY-MMDD-XXX")
-    rule_id: Optional[PyObjectId] = None
-    rule_name: str
-    severity: str  # 'critical', 'high', 'medium', 'low'
-    status: str = "new"  # 'new', 'acknowledged', 'investigating', 'resolved', 'false_positive'
-    attack_type: str
-    confidence: int = Field(0, ge=0, le=100)
-    source: AlertSource = Field(default_factory=AlertSource)
-    target: AlertTarget
-    metrics: AlertMetrics = Field(default_factory=AlertMetrics)
-    detected_by: str  # 'rule_engine', 'ml_model', 'suricata'
-    detection_details: Dict[str, Any] = {}
-
-class AlertInDB(AlertBase):
-    id: Optional[PyObjectId] = Field(alias="_id", default=None)
-    triggered_at: datetime = Field(default_factory=datetime.utcnow)
-    acknowledged_at: Optional[datetime] = None
-    acknowledged_by: Optional[PyObjectId] = None
-    resolved_at: Optional[datetime] = None
-    resolved_by: Optional[PyObjectId] = None
-    actions: List[AlertAction] = []
-    notes: List[AlertNote] = []
-    related_logs: List[PyObjectId] = []
-    related_alerts: List[PyObjectId] = []
-    incident_id: Optional[PyObjectId] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
+    def to_dict(self):
+        """Convert object to dictionary for MongoDB insertion."""
+        return {
+            "title": self.title,
+            "description": self.description,
+            "severity": self.severity,
+            "alert_type": self.alert_type,
+            "source": self.source,
+            "metadata": self.metadata,
+            "related_log_ids": self.related_log_ids,
+            "created_by": self.created_by,
+            "status": self.status,
+            "assigned_to": self.assigned_to,
+            "notes": self.notes,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+        }

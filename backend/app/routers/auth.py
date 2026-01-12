@@ -21,15 +21,12 @@ async def register(user_data: UserCreate):
         user = await create_user(
             email=user_data.email,
             full_name=user_data.full_name,
-            password=user_data.password
+            password=user_data.password,
+            key_salt=user_data.key_salt,
+            encrypted_master_key=user_data.encrypted_master_key
         )
-        return UserResponse(
-            id=user["id"],
-            email=user["email"],
-            full_name=user["full_name"],
-            created_at=user["created_at"],
-            updated_at=user["updated_at"]
-        )
+        # We can return the user dict directly as it matches UserResponse schema (with aliasing)
+        return user
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -79,11 +76,4 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
             detail="User not found"
         )
     
-    return UserResponse(
-        id=user["id"],
-        email=user["email"],
-        full_name=user["full_name"],
-        created_at=user["created_at"],
-        updated_at=user["updated_at"]
-    )
-
+    return user

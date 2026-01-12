@@ -65,11 +65,30 @@ class UserResponse(UserBase):
     created_at: datetime
     updated_at: datetime
 
-    # Pydantic v2 replacement for class Config
     model_config = ConfigDict(
         populate_by_name=True,
         from_attributes=True,
         json_encoders={ObjectId: str}
     )
 
-# ... (UserInDB class remains the same as it is a plain Python class)
+class UserInDB:
+    """Database model for user."""
+    def __init__(self, email: str, full_name: str, hashed_password: str, key_salt: str, encrypted_master_key: str):
+        self.email = email
+        self.full_name = full_name
+        self.hashed_password = hashed_password
+        self.key_salt = key_salt
+        self.encrypted_master_key = encrypted_master_key
+        self.created_at = datetime.utcnow()
+        self.updated_at = datetime.utcnow()
+
+    def to_dict(self):
+        return {
+            "email": self.email,
+            "full_name": self.full_name,
+            "hashed_password": self.hashed_password,
+            "key_salt": self.key_salt,
+            "encrypted_master_key": self.encrypted_master_key,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+        }
