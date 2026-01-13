@@ -1,8 +1,9 @@
 import { Outlet, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { authService } from '../services/auth'
-import Sidebar from './sidebar'
-import TopBar from './topbar'
+// --- FIX: Capitalize the filenames to match the actual files ---
+import Sidebar from './SideBar' 
+import TopBar from './TopBar'
 
 function Layout() {
   const navigate = useNavigate()
@@ -17,7 +18,7 @@ function Layout() {
       if (authenticated) {
         setUser(authService.getStoredUser())
       } else {
-        // Redirect to login if not authenticated
+        // This is what causes the "flicker" if auth fails
         navigate('/login')
       }
       setLoading(false)
@@ -33,7 +34,7 @@ function Layout() {
     navigate('/login')
   }
 
-  if (loading) return null // Or a loading spinner
+  if (loading) return null 
 
   if (!isAuthenticated) return null
 

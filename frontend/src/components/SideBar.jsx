@@ -5,12 +5,13 @@ function Sidebar({ user, onLogout }) {
   
   const menuItems = [
     { path: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { path: '/monitoring', label: 'Live Traffic', icon: '📈' },
+    { path: '/alerts', label: 'Active Alerts', icon: '🔔' },
+    { path: '/alerts/config', label: 'Alert Rules', icon: '⚙️' }, // New
+    { path: '/events', label: 'Timeline', icon: '📅' },         // New
     { path: '/logs', label: 'Logs', icon: '📝' },
-    { path: '/monitoring', label: 'Live Monitoring', icon: '📈' },
-    { path: '/alerts', label: 'Alerts', icon: '🔔' },
     { path: '/ml', label: 'ML Engine', icon: '🧠' },
     { path: '/suricata', label: 'Suricata', icon: '🛡️' },
-    { path: '/settings', label: 'Settings', icon: '⚙️' },
   ]
 
   return (
@@ -20,7 +21,8 @@ function Sidebar({ user, onLogout }) {
       color: '#fff', 
       display: 'flex', 
       flexDirection: 'column',
-      flexShrink: 0
+      flexShrink: 0,
+      height: '100vh' // Ensure full height
     }}>
       {/* Logo Area */}
       <div style={{ padding: '1.5rem', borderBottom: '1px solid #333' }}>
@@ -30,7 +32,7 @@ function Sidebar({ user, onLogout }) {
       </div>
 
       {/* Navigation */}
-      <nav style={{ flex: 1, padding: '1rem 0' }}>
+      <nav style={{ flex: 1, padding: '1rem 0', overflowY: 'auto' }}>
         {menuItems.map((item) => (
           <Link
             key={item.path}
@@ -42,7 +44,8 @@ function Sidebar({ user, onLogout }) {
               color: location.pathname === item.path ? '#fff' : '#aaa',
               backgroundColor: location.pathname === item.path ? '#2196F3' : 'transparent',
               textDecoration: 'none',
-              transition: 'background-color 0.2s'
+              transition: 'background-color 0.2s',
+              borderLeft: location.pathname === item.path ? '4px solid white' : '4px solid transparent'
             }}
           >
             <span style={{ marginRight: '0.75rem' }}>{item.icon}</span>

@@ -2,6 +2,7 @@
 Authentication routes: registration and login.
 """
 from datetime import timedelta
+import secrets  # --- ADDED: To generate keys if missing ---
 from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import HTTPAuthorizationCredentials
 
@@ -18,12 +19,17 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 async def register(user_data: UserCreate):
     """Register a new user."""
     try:
+        # --- UPDATED: Handle missing encryption keys ---
+        # If frontend doesn't send keys, generate server-side placeholders
+        salt = user_data.key_salt or secrets.token_hex(16)
+        master_key = user_data.encrypted_master_key or secrets.token_hex(32)
+
         user = await create_user(
             email=user_data.email,
             full_name=user_data.full_name,
             password=user_data.password,
-            key_salt=user_data.key_salt,
-            encrypted_master_key=user_data.encrypted_master_key
+            key_salt=salt,
+            encrypted_master_key=master_key
         )
         # We can return the user dict directly as it matches UserResponse schema (with aliasing)
         return user

@@ -49,8 +49,9 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """Schema for user registration including encryption metadata."""
     password: str = Field(..., min_length=8, max_length=100)
-    key_salt: str = Field(..., description="Salt used to derive the encryption key")
-    encrypted_master_key: str = Field(..., description="Encrypted master key")
+    # --- UPDATED: Made these optional with default None ---
+    key_salt: Optional[str] = Field(None, description="Salt used to derive the encryption key")
+    encrypted_master_key: Optional[str] = Field(None, description="Encrypted master key")
 
 class UserLogin(BaseModel):
     """Schema for user login."""
