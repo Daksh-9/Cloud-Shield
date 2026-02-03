@@ -5,16 +5,22 @@ import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Logs from './pages/Logs'
-import Suricata from './pages/Suricata'
-import MLDetection from './pages/MLDetection'
 import LiveTraffic from './pages/LiveTraffic'
 import AlertManagement from './pages/AlertManagement'
 import AlertConfig from './pages/AlertConfig'
 import EventTimeline from './pages/EventTimeline'
-
-// --- NEW IMPORTS ---
+import MLDetection from './pages/MLDetection'
 import MLDataInput from './pages/MLDataInput'
 import MLFeatureExtraction from './pages/MLFeatureExtraction'
+import Settings from './pages/Settings'
+import UserProfile from './pages/UserProfile'
+import Notifications from './pages/Notifications'
+
+// --- SURICATA PAGES ---
+import SuricataRules from './pages/SuricataRules'
+import SuricataUpload from './pages/SuricataUpload'
+import SuricataConfig from './pages/SuricataConfig'
+import SuricataLogs from './pages/SuricataLogs'
 
 function App() {
   return (
@@ -40,8 +46,17 @@ function App() {
         <Route path="/ml/input" element={<MLDataInput />} />
         <Route path="/ml/features" element={<MLFeatureExtraction />} />
         
-        <Route path="/suricata" element={<Suricata />} />
-        <Route path="/settings" element={<Dashboard />} />
+        {/* Suricata Routes */}
+        <Route path="/suricata" element={<Navigate to="/suricata/rules" replace />} />
+        <Route path="/suricata/rules" element={<SuricataRules />} />
+        <Route path="/suricata/upload" element={<SuricataUpload />} />
+        <Route path="/suricata/config" element={<SuricataConfig />} />
+        <Route path="/suricata/logs" element={<SuricataLogs />} />
+        
+        {/* System Routes */}
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/profile" element={<UserProfile />} />
+        <Route path="/notifications" element={<Notifications />} />
       </Route>
       
       {/* Fallback */}
