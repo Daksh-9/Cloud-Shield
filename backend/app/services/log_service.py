@@ -5,7 +5,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 from bson import ObjectId
 
-from app.database import get_database
+from app.database.connection import get_database
 from app.models.log import LogInDB
 
 

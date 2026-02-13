@@ -88,5 +88,53 @@ export const suricataService = {
     const response = await api.post('/suricata/reload')
     return response.data
   },
+
+  /**
+   * File-based rule management
+   */
+  async createRule(ruleContent, ruleName) {
+    const response = await api.post('/suricata/rules/create', {
+      rule_content: ruleContent,
+      rule_name: ruleName || undefined
+    })
+    return response.data
+  },
+
+  async getRecentRules(limit = 5) {
+    const response = await api.get(`/suricata/rules/recent?limit=${limit}`)
+    return response.data
+  },
+
+  async updateRule(lineNumber, ruleContent) {
+    const response = await api.patch(`/suricata/rules/update/${lineNumber}`, {
+      rule_content: ruleContent
+    })
+    return response.data
+  },
+
+  async viewRulesFile(search, caseSensitive = false) {
+    const params = new URLSearchParams()
+    if (search) params.append('search', search)
+    if (caseSensitive) params.append('case_sensitive', 'true')
+
+    const response = await api.get(`/suricata/rules/view?${params.toString()}`)
+    return response.data
+  },
+
+  async downloadRulesFile() {
+    const response = await api.get('/suricata/rules/download', {
+      responseType: 'blob'
+    })
+    return response.data
+  },
+
+  async getRuleHistory(limit = 50, ruleId) {
+    const params = new URLSearchParams()
+    params.append('limit', limit)
+    if (ruleId) params.append('rule_id', ruleId)
+
+    const response = await api.get(`/suricata/rules/history?${params.toString()}`)
+    return response.data
+  },
 }
 

@@ -1,9 +1,9 @@
 """
 Authentication routes: registration and login.
 """
-from datetime import timedelta
+from datetime import timedelta, datetime
 import secrets  # --- ADDED: To generate keys if missing ---
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials
 
 from app.models.user import UserCreate, UserLogin, UserResponse
@@ -41,8 +41,10 @@ async def register(user_data: UserCreate):
 
 
 @router.post("/login")
-async def login(credentials: UserLogin):
+async def login(credentials: UserLogin, request: Request):
     """Login and receive JWT token."""
+    from app.services.user_settings_service import log_user_activity, create_user_session
+    
     user = await authenticate_user(credentials.email, credentials.password)
     
     if not user:
@@ -57,6 +59,28 @@ async def login(credentials: UserLogin):
     access_token = create_access_token(
         data={"sub": user["id"], "email": user["email"]},
         expires_delta=access_token_expires
+    )
+    
+    # Log login activity
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+    
+    await log_user_activity(
+        user_id=user["id"],
+        activity_type="login",
+        ip_address=ip_address,
+        user_agent=user_agent
+    )
+    
+    # Create session
+    from datetime import datetime, timedelta
+    expires_at = datetime.utcnow() + access_token_expires
+    await create_user_session(
+        user_id=user["id"],
+        token_id=None,  # Could extract from token if JWT ID is added
+        ip_address=ip_address,
+        user_agent=user_agent,
+        expires_at=expires_at
     )
     
     return {

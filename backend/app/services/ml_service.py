@@ -6,7 +6,7 @@ from datetime import datetime
 from bson import ObjectId
 import numpy as np
 
-from app.database import get_database
+from app.database.connection import get_database
 from app.utils.ml_model_loader import get_model_loader
 from app.utils.feature_extractor import FeatureExtractor
 from app.models.ml_detection import MLDetectionInDB

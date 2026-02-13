@@ -6,8 +6,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.database import connect_to_mongo, close_mongo_connection
-from app.routers import auth, logs, alerts, monitoring, suricata, ml
+from app.database.connection import connect_to_mongo, close_mongo_connection
+from app.routers import auth, logs, alerts, monitoring, suricata, suricata_rules, ml, user
 from app.utils.ml_model_loader import initialize_models
 
 app = FastAPI(
@@ -65,5 +65,7 @@ app.include_router(logs.router)
 app.include_router(alerts.router)
 app.include_router(monitoring.router)
 app.include_router(suricata.router)
+app.include_router(suricata_rules.router)
 app.include_router(ml.router)
+app.include_router(user.router)
 

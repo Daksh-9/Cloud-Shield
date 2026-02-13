@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 
 from app.services.log_service import get_log_count
 from app.services.alert_service import get_alert_count
-from app.database import get_database
+from app.database.connection import get_database
 
 
 async def get_live_metrics() -> Dict[str, Any]:

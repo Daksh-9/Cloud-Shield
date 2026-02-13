@@ -2,9 +2,10 @@
 User service for database operations.
 """
 from typing import Optional
+from datetime import datetime
 from bson import ObjectId
 
-from app.database import get_database
+from app.database.connection import get_database
 from app.models.user import UserInDB
 from app.utils.password import hash_password, verify_password
 
@@ -89,3 +90,70 @@ async def get_user_by_id(user_id: str) -> Optional[dict]:
         }
     except Exception:
         return None
+
+
+async def update_user_profile(user_id: str, full_name: Optional[str] = None, email: Optional[str] = None) -> Optional[dict]:
+    """Update user profile information."""
+    db = get_database()
+    
+    update_data = {"updated_at": datetime.utcnow()}
+    
+    if full_name is not None:
+        update_data["full_name"] = full_name
+    
+    if email is not None:
+        # Check if email is already taken
+        existing_user = await db.users.find_one({"email": email, "_id": {"$ne": ObjectId(user_id)}})
+        if existing_user:
+            raise ValueError("Email already in use")
+        update_data["email"] = email
+    
+    if not update_data:
+        return await get_user_by_id(user_id)
+    
+    result = await db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        return await get_user_by_id(user_id)
+    
+    return await get_user_by_id(user_id)
+
+
+async def change_user_password(user_id: str, current_password: str, new_password: str) -> bool:
+    """Change user password."""
+    db = get_database()
+    
+    user_doc = await db.users.find_one({"_id": ObjectId(user_id)})
+    if not user_doc:
+        raise ValueError("User not found")
+    
+    # Verify current password
+    if not verify_password(current_password, user_doc["hashed_password"]):
+        raise ValueError("Current password is incorrect")
+    
+    # Hash new password
+    new_hashed_password = hash_password(new_password)
+    
+    # Update password
+    result = await db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"hashed_password": new_hashed_password, "updated_at": datetime.utcnow()}}
+    )
+    
+    return result.modified_count > 0
+
+
+async def delete_user_account(user_id: str) -> bool:
+    """Delete user account and all associated data."""
+    db = get_database()
+    
+    # Delete user and related data
+    await db.users.delete_one({"_id": ObjectId(user_id)})
+    await db.user_settings.delete_many({"user_id": user_id})
+    await db.user_activities.delete_many({"user_id": user_id})
+    await db.user_sessions.delete_many({"user_id": user_id})
+    
+    return True

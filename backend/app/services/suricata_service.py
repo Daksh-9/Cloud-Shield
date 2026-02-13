@@ -5,7 +5,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 from bson import ObjectId
 
-from app.database import get_database
+from app.database.connection import get_database
 from app.services.log_service import create_log
 from app.config import settings  # Import settings for paths
 
@@ -82,10 +82,12 @@ async def create_suricata_rule(name: str, rule_content: str, description: Option
     result = await db.suricata_rules.insert_one(rule_doc)
     return {"id": str(result.inserted_id), **rule_doc}
 
-async def get_suricata_rules(enabled_only: bool = False) -> List[dict]:
+async def get_suricata_rules(enabled_only: bool = False, limit: Optional[int] = None) -> List[dict]:
     db = get_database()
     query = {"enabled": True} if enabled_only else {}
     cursor = db.suricata_rules.find(query).sort("created_at", -1)
+    if limit:
+        cursor = cursor.limit(limit)
     rules = await cursor.to_list(length=None)
     return [{"id": str(r["_id"]), **r} for r in rules]
 
