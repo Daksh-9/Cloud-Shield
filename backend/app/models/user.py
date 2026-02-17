@@ -45,11 +45,11 @@ class UserBase(BaseModel):
     """Base user schema."""
     email: EmailStr
     full_name: str = Field(..., min_length=1, max_length=100)
+    role: str = Field(default="analyst", description="User role: admin or analyst")
 
 class UserCreate(UserBase):
     """Schema for user registration including encryption metadata."""
     password: str = Field(..., min_length=8, max_length=100)
-    # --- UPDATED: Made these optional with default None ---
     key_salt: Optional[str] = Field(None, description="Salt used to derive the encryption key")
     encrypted_master_key: Optional[str] = Field(None, description="Encrypted master key")
 
@@ -60,12 +60,14 @@ class UserLogin(BaseModel):
 
 class UserResponse(UserBase):
     """Schema for user response."""
-    id: str = Field(alias="_id")
-    key_salt: str
-    encrypted_master_key: str
+    id: PyObjectId = Field(alias="_id")
+    is_active: bool
+    last_login: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
-
+    
+    # Exclude sensitive data from response by omission
+    
     model_config = ConfigDict(
         populate_by_name=True,
         from_attributes=True,
@@ -74,12 +76,25 @@ class UserResponse(UserBase):
 
 class UserInDB:
     """Database model for user."""
-    def __init__(self, email: str, full_name: str, hashed_password: str, key_salt: str, encrypted_master_key: str):
+    def __init__(
+        self, 
+        email: str, 
+        full_name: str, 
+        hashed_password: str, 
+        key_salt: str, 
+        encrypted_master_key: str,
+        role: str = "analyst",
+        is_active: bool = True
+    ):
         self.email = email
         self.full_name = full_name
         self.hashed_password = hashed_password
         self.key_salt = key_salt
         self.encrypted_master_key = encrypted_master_key
+        self.role = role
+        self.is_active = is_active
+        self.failed_login_attempts = 0
+        self.last_login = None
         self.created_at = datetime.utcnow()
         self.updated_at = datetime.utcnow()
 
@@ -90,6 +105,10 @@ class UserInDB:
             "hashed_password": self.hashed_password,
             "key_salt": self.key_salt,
             "encrypted_master_key": self.encrypted_master_key,
+            "role": self.role,
+            "is_active": self.is_active,
+            "failed_login_attempts": self.failed_login_attempts,
+            "last_login": self.last_login,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
         }

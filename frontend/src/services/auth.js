@@ -5,7 +5,7 @@ import axios from 'axios'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
-// Create axios instance with default config
+// Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -13,7 +13,7 @@ const api = axios.create({
   },
 })
 
-// Add token to requests if available
+// Add token to requests
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token')
@@ -22,17 +22,13 @@ api.interceptors.request.use(
     }
     return config
   },
-  (error) => {
-    return Promise.reject(error)
-  }
+  (error) => Promise.reject(error)
 )
 
-// Handle 401 errors (unauthorized)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear token and redirect to login
       localStorage.removeItem('access_token')
       localStorage.removeItem('user')
       window.location.href = '/login'
@@ -42,9 +38,7 @@ api.interceptors.response.use(
 )
 
 export const authService = {
-  /**
-   * Register a new user
-   */
+  // ... existing register ...
   async register(email, password, fullName) {
     const response = await api.post('/auth/register', {
       email,
@@ -54,55 +48,44 @@ export const authService = {
     return response.data
   },
 
-  /**
-   * Login user
-   */
   async login(email, password) {
     const response = await api.post('/auth/login', {
       email,
       password,
     })
     
-    // Store token and user info
     if (response.data.access_token) {
       localStorage.setItem('access_token', response.data.access_token)
+      // Store user object which contains role
       localStorage.setItem('user', JSON.stringify(response.data.user))
     }
     
     return response.data
   },
 
-  /**
-   * Logout user
-   */
   logout() {
     localStorage.removeItem('access_token')
     localStorage.removeItem('user')
   },
 
-  /**
-   * Get current user info
-   */
-  async getCurrentUser() {
-    const response = await api.get('/auth/me')
-    return response.data
-  },
-
-  /**
-   * Check if user is authenticated
-   */
   isAuthenticated() {
     return !!localStorage.getItem('access_token')
   },
 
-  /**
-   * Get stored user info
-   */
   getStoredUser() {
     const userStr = localStorage.getItem('user')
     return userStr ? JSON.parse(userStr) : null
   },
+
+  // --- NEW: Role Management ---
+  getRole() {
+    const user = this.getStoredUser();
+    return user?.role || 'analyst'; 
+  },
+
+  isAdmin() {
+    return this.getRole() === 'admin';
+  }
 }
 
-export default api
-
+export default api;

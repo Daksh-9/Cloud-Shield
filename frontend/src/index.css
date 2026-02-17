@@ -1,3 +1,31 @@
+:root {
+  /* --- Light Theme Variables (Default) --- */
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #ffffff;
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --border-color: #e0e0e0;
+  --accent-color: #2196F3;
+  --sidebar-bg: #1a1a1a;
+  --sidebar-text: #ffffff;
+  --hover-bg: #f0f0f0;
+  --card-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* --- Dark Theme Variables --- */
+.dark-mode {
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --text-primary: #e0e0e0;
+  --text-secondary: #aaaaaa;
+  --border-color: #333333;
+  --accent-color: #64b5f6;
+  --sidebar-bg: #000000;
+  --sidebar-text: #e0e0e0;
+  --hover-bg: #2c2c2c;
+  --card-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -10,7 +38,11 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f5f5;
+  
+  /* Apply Theme Variables */
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 code {
@@ -18,3 +50,7 @@ code {
     monospace;
 }
 
+/* Transition utility for the sidebar animation */
+.sidebar-transition {
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}

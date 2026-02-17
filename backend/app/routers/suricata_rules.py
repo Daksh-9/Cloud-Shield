@@ -1,9 +1,10 @@
 """
 Suricata file-based rule management routes.
 """
-from typing import Optional
-from fastapi import APIRouter, HTTPException, status, Depends, Query
+from typing import Optional, List
+from fastapi import APIRouter, HTTPException, status, Depends, Query, UploadFile, File, Request
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 
 from app.models.rule_history import RuleHistoryResponse
 from app.services.file_rule_service import (
@@ -13,22 +14,40 @@ from app.services.file_rule_service import (
     get_recent_rules_from_file,
     search_rules_in_file,
     get_rules_file_path,
-    log_rule_history
+    log_rule_history,
+    # --- NEW IMPORTS ---
+    backup_rules_file,
+    restore_rules_file,
+    list_rule_backups,
+    process_uploaded_rules
 )
 from app.middleware.auth import get_current_user
 from app.database.connection import get_database
-from pydantic import BaseModel
 
 router = APIRouter(prefix="/suricata/rules", tags=["suricata-rules"])
 
 
+# --- UPDATED: Request Models ---
 class RuleCreateRequest(BaseModel):
     rule_content: str
     rule_name: Optional[str] = None
+    severity: str = "medium"  # --- NEW: Severity field ---
 
 
 class RuleUpdateRequest(BaseModel):
     rule_content: str
+
+
+# --- NEW: RBAC Helper ---
+def verify_admin_access(user: dict):
+    """Ensure user has admin privileges."""
+    # Assuming user dict has a 'role' field. Defaults to 'analyst' if missing.
+    role = user.get("role", "analyst")
+    if role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient privileges. Admin access required."
+        )
 
 
 @router.post("/create")
@@ -39,6 +58,9 @@ async def create_rule(
     """
     Create and append a new rule to the Suricata rules file.
     """
+    # --- NEW: RBAC Check ---
+    verify_admin_access(current_user)
+
     if not request.rule_content or not request.rule_content.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -46,9 +68,11 @@ async def create_rule(
         )
     
     try:
+        # --- UPDATED: Pass severity to service ---
         result = await append_rule_to_file(
             rule_content=request.rule_content.strip(),
             rule_name=request.rule_name,
+            severity=request.severity,
             user_id=current_user["id"]
         )
         
@@ -69,6 +93,43 @@ async def create_rule(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create rule: {str(e)}"
         )
+
+
+@router.post("/upload")
+async def upload_rules(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Upload a .rules file, validate, and append to existing rules.
+    Includes backup and rollback.
+    """
+    # --- NEW: RBAC Check ---
+    verify_admin_access(current_user)
+
+    if not file.filename.endswith('.rules'):
+        raise HTTPException(status_code=400, detail="Invalid file type. Must be .rules")
+
+    try:
+        content = await file.read()
+        decoded_content = content.decode('utf-8')
+
+        # --- NEW: Process Upload with Service ---
+        result = await process_uploaded_rules(
+            content=decoded_content,
+            filename=file.filename,
+            user_id=current_user["id"]
+        )
+
+        return {
+            "status": "success",
+            "message": f"Processed {result['processed_count']} rules.",
+            "skipped": result['skipped_count'],
+            "errors": result['errors']
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 
 @router.get("/recent")
@@ -96,6 +157,9 @@ async def update_rule(
     """
     Update a rule at a specific line number.
     """
+    # --- NEW: RBAC Check ---
+    verify_admin_access(current_user)
+
     if not request.rule_content or not request.rule_content.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -168,6 +232,31 @@ async def view_rules_file(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to read rules file: {str(e)}"
         )
+
+
+# --- NEW: Backup Management Endpoints ---
+
+@router.get("/backups")
+async def get_backups(current_user: dict = Depends(get_current_user)):
+    """List available rule backups."""
+    verify_admin_access(current_user)
+    return await list_rule_backups()
+
+
+@router.post("/restore/{backup_id}")
+async def restore_backup(
+    backup_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Restore rules file from a backup."""
+    verify_admin_access(current_user)
+    try:
+        await restore_rules_file(backup_id)
+        return {"status": "success", "message": f"Restored backup {backup_id}"}
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Backup not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/download")

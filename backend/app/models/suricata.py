@@ -2,8 +2,8 @@
 Suricata event model and schemas.
 """
 from datetime import datetime
-from typing import Optional, Dict, Any
-from pydantic import BaseModel, Field
+from typing import Optional, Dict, Any, List
+from pydantic import BaseModel, Field, validator
 from bson import ObjectId
 
 
@@ -34,11 +34,33 @@ class SuricataRuleBase(BaseModel):
     rule_content: str = Field(..., description="Suricata rule content")
     description: Optional[str] = Field(default=None)
     enabled: bool = Field(default=True)
+    
+    # --- NEW: Severity Field ---
+    severity: str = Field(
+        default="medium",
+        description="Rule severity: low, medium, high, zero_trust"
+    )
+
+    @validator("severity")
+    def validate_severity(cls, v):
+        allowed = ["low", "medium", "high", "zero_trust"]
+        if v not in allowed:
+            raise ValueError(f"Severity must be one of: {', '.join(allowed)}")
+        return v
 
 
 class SuricataRuleCreate(SuricataRuleBase):
     """Schema for Suricata rule creation."""
+    # --- NEW: Auto-capture fields are handled by backend, but schema allows input ---
     pass
+
+
+# --- NEW: Schema for Rule Upload ---
+class SuricataRuleUpload(BaseModel):
+    filename: str
+    uploaded_by: str
+    rule_count: int
+    created_at: datetime
 
 
 class SuricataRuleResponse(SuricataRuleBase):
@@ -46,6 +68,7 @@ class SuricataRuleResponse(SuricataRuleBase):
     id: str
     created_at: datetime
     updated_at: datetime
+    created_by: Optional[str] = None  # --- NEW: Track creator ---
 
     class Config:
         from_attributes = True
@@ -71,4 +94,3 @@ class SuricataConfigResponse(SuricataConfigBase):
 
     class Config:
         from_attributes = True
-

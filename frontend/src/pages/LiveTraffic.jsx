@@ -10,7 +10,6 @@ function LiveTraffic() {
     alerts_count: 12
   })
   
-  // Dummy history data to initialize the graph
   const [trafficHistory, setTrafficHistory] = useState(
     Array.from({ length: 20 }, (_, i) => ({
       time: `${10 + Math.floor(i/2)}:${(i%2)*30}`.padStart(5, '0'),
@@ -35,64 +34,74 @@ function LiveTraffic() {
   const [isRecording, setIsRecording] = useState(true)
   const wsRef = useRef(null)
 
-  useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (token && isRecording) {
-      const ws = monitoringService.createWebSocketConnection(
-        token,
-        (message) => {
-          // Update state based on real backend messages here
-          if (message.type === 'metrics') {
-            // Example of how you would merge real data:
-            // setMetrics(prev => ({ ...prev, ...message.data.metrics }))
-          }
-        },
-        (error) => console.error('WS Error:', error)
-      )
-      wsRef.current = ws
-    }
+  // Detect dark mode for Recharts colors
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
-    return () => {
-      if (wsRef.current) wsRef.current.close()
-    }
-  }, [isRecording])
+  useEffect(() => {
+    // Check initial mode
+    const checkMode = () => setIsDarkMode(document.body.classList.contains('dark-mode'));
+    checkMode();
+
+    // Listen for changes (MutationObserver is best, but interval is simpler for now)
+    const observer = new MutationObserver(checkMode);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <div style={{ padding: '1rem', maxWidth: '1600px', margin: '0 auto' }}>
+    <div style={{ padding: '1rem', maxWidth: '1600px', margin: '0 auto', color: 'var(--text-primary)' }}>
       
       {/* Header Area */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid #ddd', paddingBottom: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
         <div>
-          <h1 style={{ margin: 0, color: '#1a1a1a' }}>Live Traffic Monitoring</h1>
-          <p style={{ margin: '0.5rem 0 0', color: '#666' }}>Real-time network traffic analysis and flow detection</p>
+          <h1 style={{ margin: 0, color: 'var(--text-primary)' }}>Live Traffic Monitoring</h1>
+          <p style={{ margin: '0.5rem 0 0', color: 'var(--text-secondary)' }}>Real-time network traffic analysis and flow detection</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ display: 'flex', alignItems: 'center', color: isRecording ? '#d32f2f' : '#666', fontWeight: 'bold' }}>
+          <span style={{ display: 'flex', alignItems: 'center', color: isRecording ? '#d32f2f' : 'var(--text-secondary)', fontWeight: 'bold' }}>
             <span style={{ 
-              width: '10px', height: '10px', backgroundColor: isRecording ? '#d32f2f' : '#ccc', 
+              width: '10px', height: '10px', backgroundColor: isRecording ? '#d32f2f' : 'var(--border-color)', 
               borderRadius: '50%', display: 'inline-block', marginRight: '8px',
               boxShadow: isRecording ? '0 0 8px #d32f2f' : 'none',
               animation: isRecording ? 'pulse 1.5s infinite' : 'none'
             }}></span>
             {isRecording ? 'Recording' : 'Paused'}
           </span>
-          <button onClick={() => setIsRecording(!isRecording)} style={{ padding: '0.5rem 1rem', cursor: 'pointer', border: '1px solid #ddd', background: '#fff', borderRadius: '4px' }}>
+          <button 
+            onClick={() => setIsRecording(!isRecording)} 
+            style={{ 
+              padding: '0.5rem 1rem', 
+              cursor: 'pointer', 
+              border: '1px solid var(--border-color)', 
+              background: 'var(--bg-secondary)', 
+              color: 'var(--text-primary)',
+              borderRadius: '4px' 
+            }}
+          >
             {isRecording ? 'Pause' : 'Resume'}
           </button>
         </div>
       </div>
 
       {/* Metrics Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
         {[
           { label: 'Packets/s', value: metrics.packets_sec.toLocaleString(), sub: '▲ +12%', color: '#2196F3' },
           { label: 'Flows/s', value: metrics.flows_sec.toLocaleString(), sub: '▼ -3%', color: '#FF9800' },
           { label: 'Bandwidth', value: `${metrics.bandwidth_gbps} Gb/s`, sub: '▲ +8%', color: '#00C853' },
           { label: 'Alerts', value: metrics.alerts_count, sub: '▲ +4', color: '#F44336' }
         ].map((item, i) => (
-          <div key={i} style={{ backgroundColor: '#fff', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', borderTop: `4px solid ${item.color}` }}>
-            <div style={{ color: '#666', fontSize: '0.9rem', marginBottom: '0.5rem' }}>{item.label}</div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#1a1a1a' }}>{item.value}</div>
+          <div key={i} style={{ 
+            backgroundColor: 'var(--bg-secondary)', 
+            padding: '1.5rem', 
+            borderRadius: '8px', 
+            boxShadow: 'var(--card-shadow)', 
+            borderTop: `4px solid ${item.color}`,
+            border: '1px solid var(--border-color)'
+          }}>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>{item.label}</div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{item.value}</div>
             <div style={{ fontSize: '0.8rem', marginTop: '0.5rem', color: item.sub.includes('▲') ? '#00C853' : '#d32f2f' }}>
               {item.sub}
             </div>
@@ -101,19 +110,47 @@ function LiveTraffic() {
       </div>
 
       {/* Main Content Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(600px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
         
         {/* Traffic Graph */}
-        <div style={{ backgroundColor: '#fff', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-          <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: '#333' }}>Traffic Volume (Last 10 min)</h3>
+        <div style={{ 
+          backgroundColor: 'var(--bg-secondary)', 
+          padding: '1.5rem', 
+          borderRadius: '8px', 
+          boxShadow: 'var(--card-shadow)',
+          border: '1px solid var(--border-color)'
+        }}>
+          <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Traffic Volume (Last 10 min)</h3>
           <div style={{ height: '300px', width: '100%' }}>
             <ResponsiveContainer>
               <LineChart data={trafficHistory}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-                <XAxis dataKey="time" stroke="#999" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#999" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value/1000}K`} />
+                <CartesianGrid 
+                  strokeDasharray="3 3" 
+                  vertical={false} 
+                  stroke={isDarkMode ? "#333" : "#eee"} // Dynamic Stroke
+                />
+                <XAxis 
+                  dataKey="time" 
+                  stroke={isDarkMode ? "#888" : "#666"} 
+                  fontSize={12} 
+                  tickLine={false} 
+                  axisLine={false} 
+                />
+                <YAxis 
+                  stroke={isDarkMode ? "#888" : "#666"} 
+                  fontSize={12} 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickFormatter={(value) => `${value/1000}K`} 
+                />
                 <Tooltip 
-                  contentStyle={{ border: 'none', borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
+                  contentStyle={{ 
+                    border: 'none', 
+                    borderRadius: '4px', 
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                    backgroundColor: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)'
+                  }}
                 />
                 <Line 
                   type="monotone" 
@@ -122,7 +159,6 @@ function LiveTraffic() {
                   strokeWidth={3} 
                   dot={false} 
                   activeDot={{ r: 6 }} 
-                  fill="url(#colorValue)" 
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -130,24 +166,29 @@ function LiveTraffic() {
         </div>
 
         {/* Top Source IPs */}
-        <div style={{ backgroundColor: '#fff', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-          <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: '#333' }}>Top Source IPs</h3>
+        <div style={{ 
+          backgroundColor: 'var(--bg-secondary)', 
+          padding: '1.5rem', 
+          borderRadius: '8px', 
+          boxShadow: 'var(--card-shadow)',
+          border: '1px solid var(--border-color)'
+        }}>
+          <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Top Source IPs</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {topIps.map((ip, i) => (
               <div key={i} style={{ position: 'relative' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.9rem', position: 'relative', zIndex: 2 }}>
-                  <span style={{ fontWeight: '500' }}>{ip.ip}</span>
-                  <span style={{ color: '#666' }}>{ip.packets} pkts</span>
+                  <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{ip.ip}</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{ip.packets} pkts</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#888', marginBottom: '0.25rem', position: 'relative', zIndex: 2 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem', position: 'relative', zIndex: 2 }}>
                   <span>{ip.protocol}</span>
                   <span>{ip.bytes}</span>
                 </div>
-                {/* Progress Bar Background */}
                 <div style={{ 
                   height: '4px', 
                   width: '100%', 
-                  backgroundColor: '#eee', 
+                  backgroundColor: 'var(--bg-primary)', 
                   borderRadius: '2px', 
                   overflow: 'hidden' 
                 }}>
@@ -164,18 +205,24 @@ function LiveTraffic() {
       </div>
 
       {/* Bottom Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
         
         {/* Protocol Distribution */}
-        <div style={{ backgroundColor: '#fff', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-          <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: '#333' }}>Protocol Distribution</h3>
+        <div style={{ 
+          backgroundColor: 'var(--bg-secondary)', 
+          padding: '1.5rem', 
+          borderRadius: '8px', 
+          boxShadow: 'var(--card-shadow)',
+          border: '1px solid var(--border-color)'
+        }}>
+          <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Protocol Distribution</h3>
           {protocols.map((p, i) => (
             <div key={i} style={{ marginBottom: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                <span style={{ fontWeight: '500' }}>{p.name}</span>
-                <span>{p.value}%</span>
+                <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{p.name}</span>
+                <span style={{ color: 'var(--text-secondary)' }}>{p.value}%</span>
               </div>
-              <div style={{ height: '8px', backgroundColor: '#f0f0f0', borderRadius: '4px', overflow: 'hidden' }}>
+              <div style={{ height: '8px', backgroundColor: 'var(--bg-primary)', borderRadius: '4px', overflow: 'hidden' }}>
                 <div style={{ width: `${p.value}%`, height: '100%', backgroundColor: p.color }}></div>
               </div>
             </div>
@@ -183,33 +230,33 @@ function LiveTraffic() {
         </div>
 
         {/* Geographic Map Placeholder */}
-        <div style={{ backgroundColor: '#fff', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-          <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: '#333' }}>Geographic Source Map</h3>
+        <div style={{ 
+          backgroundColor: 'var(--bg-secondary)', 
+          padding: '1.5rem', 
+          borderRadius: '8px', 
+          boxShadow: 'var(--card-shadow)',
+          border: '1px solid var(--border-color)'
+        }}>
+          <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Geographic Source Map</h3>
           <div style={{ 
             height: '200px', 
-            backgroundColor: '#e3f2fd', 
+            backgroundColor: 'var(--bg-primary)', 
             borderRadius: '8px', 
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'center',
-            color: '#1976D2',
-            border: '2px dashed #90CAF9'
+            color: 'var(--accent-color)',
+            border: '2px dashed var(--border-color)'
           }}>
             <div style={{ textAlign: 'center' }}>
               <span style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}>🌍</span>
-              [Interactive World Map Placeholder]
+              [Map Component]
             </div>
           </div>
         </div>
 
       </div>
       
-      {/* Controls Footer */}
-      <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
-         <button style={{ padding: '0.75rem 1.5rem', backgroundColor: '#2196F3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Export Data</button>
-         <button style={{ padding: '0.75rem 1.5rem', backgroundColor: '#fff', color: '#333', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer' }}>Configure Thresholds</button>
-      </div>
-
       <style>{`
         @keyframes pulse {
           0% { opacity: 1; }

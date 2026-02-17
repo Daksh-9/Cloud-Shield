@@ -1,35 +1,20 @@
 """
 User profile and settings routes.
 """
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, HTTPException, status, Depends, Request, Query
-from fastapi.security import HTTPAuthorizationCredentials
+from bson import ObjectId
 
-from app.models.user_settings import (
-    UserSettingsResponse,
-    UserSettingsUpdate,
-    UserProfileUpdate,
-    PasswordChange,
-    UserActivityResponse,
-    UserSessionResponse
-)
+from app.models.user import UserResponse
+from app.models.user_settings import UserProfileUpdate, PasswordChange
 from app.services.user_service import (
     update_user_profile,
     change_user_password,
-    delete_user_account,
     get_user_by_id
 )
-from app.services.user_settings_service import (
-    get_user_settings,
-    update_user_settings,
-    log_user_activity,
-    get_user_activities,
-    get_user_sessions,
-    revoke_user_session,
-    revoke_all_user_sessions
-)
-from app.middleware.auth import get_current_user, security
-from app.utils.jwt import verify_token
+from app.services.user_settings_service import log_user_activity
+from app.middleware.auth import get_current_user, get_admin_user
+from app.database.connection import get_database
 
 router = APIRouter(prefix="/user", tags=["user"])
 
@@ -59,7 +44,6 @@ async def update_profile(
 ):
     """Update user profile."""
     try:
-        # Get client IP and user agent
         ip_address = request.client.host if request.client else None
         user_agent = request.headers.get("user-agent")
         
@@ -69,13 +53,6 @@ async def update_profile(
             email=profile_update.email
         )
         
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
-        
-        # Log activity
         await log_user_activity(
             user_id=current_user["id"],
             activity_type="profile_update",
@@ -84,16 +61,9 @@ async def update_profile(
             metadata={"updated_fields": profile_update.dict(exclude_unset=True)}
         )
         
-        # Remove sensitive fields
-        user.pop("key_salt", None)
-        user.pop("encrypted_master_key", None)
-        
         return user
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/change-password")
@@ -104,7 +74,6 @@ async def change_password(
 ):
     """Change user password."""
     try:
-        # Get client IP and user agent
         ip_address = request.client.host if request.client else None
         user_agent = request.headers.get("user-agent")
         
@@ -115,12 +84,8 @@ async def change_password(
         )
         
         if not success:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to change password"
-            )
+            raise HTTPException(status_code=400, detail="Failed to change password")
         
-        # Log activity
         await log_user_activity(
             user_id=current_user["id"],
             activity_type="password_change",
@@ -128,146 +93,61 @@ async def change_password(
             user_agent=user_agent
         )
         
-        return {"status": "success", "message": "Password changed successfully"}
+        return {"status": "success", "message": "Password updated successfully"}
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/settings", response_model=UserSettingsResponse)
-async def get_settings(current_user: dict = Depends(get_current_user)):
-    """Get user settings."""
-    settings = await get_user_settings(current_user["id"])
-    return UserSettingsResponse(**settings)
+# --- ADMIN ONLY ROUTES ---
 
-
-@router.patch("/settings", response_model=UserSettingsResponse)
-async def update_settings(
-    settings_update: UserSettingsUpdate,
-    current_user: dict = Depends(get_current_user)
+@router.get("/all", response_model=List[UserResponse])
+async def get_all_users(
+    skip: int = 0,
+    limit: int = 100,
+    current_user: dict = Depends(get_admin_user)
 ):
-    """Update user settings."""
-    settings = await update_user_settings(current_user["id"], settings_update)
-    return UserSettingsResponse(**settings)
+    """Admin: List all users."""
+    db = get_database()
+    cursor = db.users.find({}).skip(skip).limit(limit)
+    users = await cursor.to_list(length=limit)
+    # Convert _id to string id for response model
+    return [{"id": str(u["_id"]), **u} for u in users]
 
 
-@router.get("/activities", response_model=list[UserActivityResponse])
-async def get_activities(
-    limit: int = Query(default=100, ge=1, le=500),
-    skip: int = Query(default=0, ge=0),
-    activity_type: Optional[str] = Query(default=None),
-    current_user: dict = Depends(get_current_user)
+@router.delete("/{user_id}/deactivate")
+async def deactivate_user(
+    user_id: str,
+    current_user: dict = Depends(get_admin_user)
 ):
-    """Get user activity logs."""
-    activities = await get_user_activities(
-        user_id=current_user["id"],
-        limit=limit,
-        skip=skip,
-        activity_type=activity_type
+    """Admin: Deactivate a user account."""
+    if user_id == current_user["id"]:
+        raise HTTPException(status_code=400, detail="Cannot deactivate yourself")
+
+    db = get_database()
+    result = await db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"is_active": False}}
     )
     
-    return [
-        UserActivityResponse(**act)
-        for act in activities
-    ]
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    return {"status": "success", "message": "User deactivated"}
 
 
-@router.get("/sessions", response_model=list[UserSessionResponse])
-async def get_sessions(current_user: dict = Depends(get_current_user)):
-    """Get user active sessions."""
-    # Extract token ID from current session
-    token_id = None
-    try:
-        credentials: HTTPAuthorizationCredentials = await security()
-        if credentials:
-            payload = verify_token(credentials.credentials)
-            if payload:
-                token_id = payload.get("jti")  # JWT ID if available
-    except:
-        pass
-    
-    sessions = await get_user_sessions(current_user["id"])
-    
-    return [
-        UserSessionResponse(**sess)
-        for sess in sessions
-    ]
-
-
-@router.delete("/sessions/{session_id}")
-async def revoke_session(
-    session_id: str,
-    current_user: dict = Depends(get_current_user)
+@router.patch("/{user_id}/reactivate")
+async def reactivate_user(
+    user_id: str,
+    current_user: dict = Depends(get_admin_user)
 ):
-    """Revoke a specific session."""
-    success = await revoke_user_session(session_id, current_user["id"])
-    
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Session not found"
-        )
-    
-    return {"status": "success", "message": "Session revoked"}
-
-
-@router.post("/sessions/revoke-all")
-async def revoke_all_sessions(
-    request: Request,
-    current_user: dict = Depends(get_current_user)
-):
-    """Revoke all sessions except the current one."""
-    # Extract current token ID
-    token_id = None
-    try:
-        credentials: HTTPAuthorizationCredentials = await security()
-        if credentials:
-            payload = verify_token(credentials.credentials)
-            if payload:
-                token_id = payload.get("jti")
-    except:
-        pass
-    
-    count = await revoke_all_user_sessions(current_user["id"], exclude_token_id=token_id)
-    
-    # Log activity
-    ip_address = request.client.host if request.client else None
-    user_agent = request.headers.get("user-agent")
-    await log_user_activity(
-        user_id=current_user["id"],
-        activity_type="sessions_revoked",
-        ip_address=ip_address,
-        user_agent=user_agent,
-        metadata={"revoked_count": count}
+    """Admin: Reactivate a user account."""
+    db = get_database()
+    result = await db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"is_active": True}}
     )
     
-    return {"status": "success", "message": f"Revoked {count} session(s)"}
-
-
-@router.delete("/account")
-async def delete_account(
-    request: Request,
-    current_user: dict = Depends(get_current_user)
-):
-    """Delete user account."""
-    # Log activity before deletion
-    ip_address = request.client.host if request.client else None
-    user_agent = request.headers.get("user-agent")
-    await log_user_activity(
-        user_id=current_user["id"],
-        activity_type="account_deleted",
-        ip_address=ip_address,
-        user_agent=user_agent
-    )
-    
-    success = await delete_user_account(current_user["id"])
-    
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete account"
-        )
-    
-    return {"status": "success", "message": "Account deleted successfully"}
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    return {"status": "success", "message": "User reactivated"}
