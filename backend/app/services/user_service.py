@@ -10,7 +10,14 @@ from app.models.user import UserInDB
 from app.utils.password import hash_password, verify_password
 
 
-async def create_user(email: str, full_name: str, password: str, key_salt: str, encrypted_master_key: str) -> dict:
+async def create_user(
+    email: str, 
+    full_name: str, 
+    password: str, 
+    key_salt: str, 
+    encrypted_master_key: str,
+    role: str = "analyst"
+) -> dict:
     """Create a new user in the database."""
     db = get_database()
     
@@ -26,7 +33,8 @@ async def create_user(email: str, full_name: str, password: str, key_salt: str, 
         full_name=full_name, 
         hashed_password=hashed_password,
         key_salt=key_salt,
-        encrypted_master_key=encrypted_master_key
+        encrypted_master_key=encrypted_master_key,
+        role=role
     )
     
     # Insert into database
@@ -43,6 +51,7 @@ async def create_user(email: str, full_name: str, password: str, key_salt: str, 
         "id": str(user_dict["_id"]),
         "email": user_dict["email"],
         "full_name": user_dict["full_name"],
+        "role": user_dict["role"],
         "key_salt": user_dict["key_salt"],
         "encrypted_master_key": user_dict["encrypted_master_key"],
         "created_at": user_dict["created_at"],
@@ -66,7 +75,8 @@ async def authenticate_user(email: str, password: str) -> Optional[dict]:
     return {
         "id": str(user_doc["_id"]),
         "email": user_doc["email"],
-        "full_name": user_doc["full_name"]
+        "full_name": user_doc["full_name"],
+        "role": user_doc.get("role", "analyst")
     }
 
 
@@ -83,6 +93,7 @@ async def get_user_by_id(user_id: str) -> Optional[dict]:
             "id": str(user_doc["_id"]),
             "email": user_doc["email"],
             "full_name": user_doc["full_name"],
+            "role": user_doc.get("role", "analyst"),
             "key_salt": user_doc.get("key_salt", ""),
             "encrypted_master_key": user_doc.get("encrypted_master_key", ""),
             "created_at": user_doc.get("created_at"),

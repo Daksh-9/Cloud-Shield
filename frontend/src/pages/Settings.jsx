@@ -33,6 +33,10 @@ function Settings() {
   const [sessions, setSessions] = useState([])
   const [sessionsLoading, setSessionsLoading] = useState(false)
 
+  // Admin: Manage Analysts state
+  const [allUsers, setAllUsers] = useState([])
+  const [usersLoading, setUsersLoading] = useState(false)
+
   useEffect(() => {
     if (!authService.isAuthenticated()) {
       navigate('/login')
@@ -97,11 +101,25 @@ function Settings() {
     }
   }
 
+  const loadAllUsers = async () => {
+    setUsersLoading(true)
+    try {
+      const data = await userService.getAllUsers()
+      setAllUsers(data)
+    } catch (err) {
+      setError('Failed to load users. Admin privileges required.')
+    } finally {
+      setUsersLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (activeTab === 'activities') {
       loadActivities()
     } else if (activeTab === 'sessions') {
       loadSessions()
+    } else if (activeTab === 'manage_analysts') {
+      loadAllUsers()
     }
   }, [activeTab])
 
@@ -214,6 +232,21 @@ function Settings() {
     }
   }
 
+  const handleToggleUserStatus = async (user) => {
+    try {
+      if (user.is_active) {
+        await userService.deactivateUser(user.id)
+        setSuccess(`User ${user.email} deactivated.`)
+      } else {
+        await userService.reactivateUser(user.id)
+        setSuccess(`User ${user.email} reactivated.`)
+      }
+      await loadAllUsers()
+    } catch (err) {
+      setError(err.response?.data?.detail || 'Action failed.')
+    }
+  }
+
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A'
     return new Date(dateString).toLocaleString()
@@ -225,7 +258,7 @@ function Settings() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '2px solid #ddd', flexWrap: 'wrap' }}>
-        {['profile', 'password', 'preferences', 'notifications', 'dashboard', 'activities', 'sessions', 'danger'].map(tab => (
+        {['profile', 'password', 'preferences', 'notifications', 'dashboard', 'activities', 'sessions', 'manage_analysts', 'danger'].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -241,7 +274,7 @@ function Settings() {
               textTransform: 'capitalize'
             }}
           >
-            {tab}
+            {tab.replace('_', ' ')}
           </button>
         ))}
       </div>
@@ -905,6 +938,43 @@ function Settings() {
                     }}
                   >
                     Revoke
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Manage Analysts Tab */}
+      {activeTab === 'manage_analysts' && (
+        <div style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+          <h2 style={{ marginBottom: '1.5rem', color: '#333' }}>Manage System Users</h2>
+          {usersLoading ? (
+            <p>Loading users...</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {allUsers.map(user => (
+                <div key={user.id} style={{ padding: '1rem', border: '1px solid #ddd', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: user.is_active ? '#fff' : '#f5f5f5' }}>
+                  <div>
+                    <div style={{ fontWeight: 'bold' }}>{user.full_name}</div>
+                    <div style={{ fontSize: '0.875rem', color: '#666' }}>{user.email}</div>
+                    <div style={{ fontSize: '0.75rem', color: user.is_active ? '#4CAF50' : '#F44336' }}>
+                      Status: {user.is_active ? 'Active' : 'Deactivated'}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleToggleUserStatus(user)}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      backgroundColor: user.is_active ? '#F44336' : '#4CAF50',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {user.is_active ? 'Deactivate' : 'Reactivate'}
                   </button>
                 </div>
               ))}

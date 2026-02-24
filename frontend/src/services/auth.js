@@ -38,12 +38,12 @@ api.interceptors.response.use(
 )
 
 export const authService = {
-  // ... existing register ...
-  async register(email, password, fullName) {
+  async register(email, password, fullName, role = 'analyst') {
     const response = await api.post('/auth/register', {
       email,
       password,
       full_name: fullName,
+      role: role
     })
     return response.data
   },
@@ -77,7 +77,6 @@ export const authService = {
     return userStr ? JSON.parse(userStr) : null
   },
 
-  // --- NEW: Role Management ---
   getRole() {
     const user = this.getStoredUser();
     return user?.role || 'analyst'; 

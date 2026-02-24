@@ -30,7 +30,7 @@ async def register(user_data: UserCreate):
             password=user_data.password,
             key_salt=salt,
             encrypted_master_key=master_key,
-            role="analyst" # Force default role on register
+            role=user_data.role or "analyst"  # Respect the role from the request
         )
         return user
     except ValueError as e:

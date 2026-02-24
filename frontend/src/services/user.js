@@ -91,4 +91,28 @@ export const userService = {
     const response = await api.delete('/user/account')
     return response.data
   },
+
+  /**
+   * Admin: Get all users
+   */
+  async getAllUsers(skip = 0, limit = 100) {
+    const response = await api.get(`/user/all?skip=${skip}&limit=${limit}`)
+    return response.data
+  },
+
+  /**
+   * Admin: Deactivate a user account
+   */
+  async deactivateUser(userId) {
+    const response = await api.delete(`/user/${userId}/deactivate`)
+    return response.data
+  },
+
+  /**
+   * Admin: Reactivate a user account
+   */
+  async reactivateUser(userId) {
+    const response = await api.patch(`/user/${userId}/reactivate`)
+    return response.data
+  },
 }
