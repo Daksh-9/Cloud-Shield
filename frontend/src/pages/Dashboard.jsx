@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { monitoringService } from '../services/monitoring';
+import useSocket from '../hooks/useSocket';
 // ... other imports
 
 const Dashboard = () => {
   const navigate = useNavigate();
   // ... existing state ...
   const [alertStats, setAlertStats] = useState({ critical: 0, high: 0, medium: 0, low: 0 });
+  const [recentAlerts, setRecentAlerts] = useState([]);
+  const [systemLogs, setSystemLogs] = useState([]);
 
   // --- NEW: Load Distribution ---
   useEffect(() => {
@@ -16,9 +19,50 @@ const Dashboard = () => {
       critical: 5,
       high: 12,
       medium: 45,
-      low: 20
+      low: 20,
     });
   }, []);
+
+  // WebSocket subscription for live LOG_UPDATE and ALERT_NEW events
+  useSocket((event) => {
+    if (!event || !event.type) return;
+
+    if (event.type === 'ALERT_NEW' && event.payload) {
+      const alert = event.payload;
+
+      // Update severity stats
+      setAlertStats((prev) => {
+        const sevKey = (alert.severity || '').toLowerCase();
+        if (!['critical', 'high', 'medium', 'low'].includes(sevKey)) {
+          return prev;
+        }
+        return {
+          ...prev,
+          [sevKey]: (prev[sevKey] || 0) + 1,
+        };
+      });
+
+      // Prepend to recent alerts list
+      setRecentAlerts((prev) => [
+        {
+          id: alert.id,
+          time: alert.created_at || new Date().toISOString(),
+          title: alert.title,
+          severity: alert.severity,
+          status: alert.status || 'Open',
+        },
+        ...prev,
+      ].slice(0, 20));
+    }
+
+    if (event.type === 'LOG_UPDATE' && event.payload) {
+      const log = event.payload;
+      setSystemLogs((prev) => [
+        `${log.severity || 'info'}: ${log.message}`,
+        ...prev,
+      ].slice(0, 20));
+    }
+  });
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
@@ -66,21 +110,16 @@ const Dashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {/* Mock Data - In real app, map over fetched alerts */}
-              {[
-                { time: '10:42 AM', rule: 'SQL Injection Detected', sev: 'Critical', status: 'Open' },
-                { time: '10:30 AM', rule: 'SSH Brute Force', sev: 'High', status: 'Investigating' },
-                { time: '09:15 AM', rule: 'Suspicious User Agent', sev: 'Medium', status: 'Resolved' },
-              ].map((row, i) => (
+              {recentAlerts.map((row, i) => (
                 <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '0.75rem' }}>{row.time}</td>
-                  <td style={{ padding: '0.75rem', fontWeight: '500' }}>{row.rule}</td>
+                  <td style={{ padding: '0.75rem' }}>{new Date(row.time).toLocaleTimeString()}</td>
+                  <td style={{ padding: '0.75rem', fontWeight: '500' }}>{row.title}</td>
                   <td style={{ padding: '0.75rem' }}>
                     <span style={{ 
                       padding: '2px 8px', borderRadius: '10px', fontSize: '0.8rem', color: '#fff',
-                      backgroundColor: row.sev === 'Critical' ? '#d32f2f' : row.sev === 'High' ? '#f57c00' : '#fbc02d' 
+                      backgroundColor: row.severity === 'Critical' ? '#d32f2f' : row.severity === 'High' ? '#f57c00' : '#fbc02d' 
                     }}>
-                      {row.sev}
+                      {row.severity}
                     </span>
                   </td>
                   <td style={{ padding: '0.75rem' }}>{row.status}</td>
@@ -94,9 +133,14 @@ const Dashboard = () => {
         <div style={{ backgroundColor: '#fff', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
           <h3>System Logs</h3>
           <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: '#666', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div>ℹ️ Backup created successfully</div>
-            <div>ℹ️ Rule updated by Admin</div>
-            <div style={{ color: '#d32f2f' }}>⚠️ Failed login attempt (admin)</div>
+            {systemLogs.length === 0 && (
+              <>
+                <div>ℹ️ Waiting for live log events…</div>
+              </>
+            )}
+            {systemLogs.map((entry, idx) => (
+              <div key={idx}>{entry}</div>
+            ))}
           </div>
         </div>
       </div>

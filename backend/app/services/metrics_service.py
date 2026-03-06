@@ -91,3 +91,33 @@ async def get_recent_alerts(limit: int = 10) -> list:
     alerts = await get_alerts(limit=limit)
     return alerts
 
+
+async def get_short_window_stats(window_seconds: int = 60) -> Dict[str, Any]:
+    """
+    Calculate short-window metrics such as RPS and recent alerts.
+
+    Uses MongoDB timestamp filters over the given window.
+    """
+    db = get_database()
+    now = datetime.utcnow()
+    window_start = now - timedelta(seconds=window_seconds)
+
+    # Count logs and alerts within the recent window.
+    logs_in_window = await db.logs.count_documents(
+        {"timestamp": {"$gte": window_start}}
+    )
+    alerts_in_window = await db.alerts.count_documents(
+        {"created_at": {"$gte": window_start}}
+    )
+
+    rps = logs_in_window / float(window_seconds) if window_seconds > 0 else 0.0
+
+    return {
+        "window_seconds": window_seconds,
+        "from": window_start.isoformat(),
+        "to": now.isoformat(),
+        "log_count": logs_in_window,
+        "alert_count": alerts_in_window,
+        "requests_per_second": rps,
+    }
+

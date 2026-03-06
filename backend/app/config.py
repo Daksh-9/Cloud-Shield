@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     MONGO_URI: str = os.getenv("MONGO_URI", "mongodb://localhost:27017")
     DB_NAME: str = os.getenv("DB_NAME", "CloudShield")
     
+    # --- Backups ---
+    BACKUP_DIR: str = os.getenv("BACKUP_DIR", str(Path(__file__).resolve().parent.parent / "backups"))
+    
     # --- Security ---
     SECRET_KEY: str = os.getenv("SECRET_KEY", "change_this_secret_in_production")
     ALGORITHM: str = "HS256"

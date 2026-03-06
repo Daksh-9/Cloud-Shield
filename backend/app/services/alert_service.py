@@ -7,6 +7,7 @@ from bson import ObjectId
 
 from app.database.connection import get_database
 from app.models.alert import AlertInDB
+from app.services.realtime import broadcast_event
 
 
 async def create_alert(
@@ -39,7 +40,7 @@ async def create_alert(
     # Return alert data
     alert_dict = alert.to_dict()
     alert_dict["_id"] = result.inserted_id
-    return {
+    response = {
         "id": str(alert_dict["_id"]),
         "title": alert_dict["title"],
         "description": alert_dict["description"],
@@ -53,8 +54,31 @@ async def create_alert(
         "assigned_to": alert_dict["assigned_to"],
         "notes": alert_dict["notes"],
         "created_at": alert_dict["created_at"],
-        "updated_at": alert_dict["updated_at"]
+        "updated_at": alert_dict["updated_at"],
     }
+
+    # Broadcast real-time alert event.
+    try:
+        await broadcast_event(
+            {
+                "type": "ALERT_NEW",
+                "payload": {
+                    "id": response["id"],
+                    "title": response["title"],
+                    "severity": response["severity"],
+                    "alert_type": response["alert_type"],
+                    "status": response["status"],
+                    "created_at": response["created_at"].isoformat()
+                    if isinstance(response["created_at"], datetime)
+                    else str(response["created_at"]),
+                },
+            }
+        )
+    except Exception:
+        # Real-time broadcasting should not break ingestion.
+        pass
+
+    return response
 
 
 async def get_alerts(

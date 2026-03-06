@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { Activity, Globe, FileDigit, ShieldAlert, Map as MapIcon } from 'lucide-react';
 import { ComposableMap, Geographies, Geography } from "react-simple-maps";
+import useSocket from '../hooks/useSocket';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 const IDLE_COLOR = ['#94a3b8']; 
@@ -58,6 +59,24 @@ export default function LiveTraffic() {
     const interval = setInterval(fetchTrafficData, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  // WebSocket: use log updates to slightly bump the live timeline,
+  // giving an immediate visual response between HTTP polling intervals.
+  useSocket((event) => {
+    if (!event || event.type !== 'LOG_UPDATE' || !event.payload) return;
+
+    setStats((prev) => {
+      const newTime = new Date().toLocaleTimeString();
+      // Use a small synthetic "size" bump to indicate live traffic.
+      const newSize = Math.max(1, prev.timeline[prev.timeline.length - 1]?.size || 1);
+      const newTimeline = [...prev.timeline.slice(1), { time: newTime, size: newSize }];
+
+      return {
+        ...prev,
+        timeline: newTimeline,
+      };
+    });
+  });
 
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading Live Traffic...</div>;
 

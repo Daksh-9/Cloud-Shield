@@ -7,6 +7,7 @@ from bson import ObjectId
 
 from app.database.connection import get_database
 from app.models.log import LogInDB
+from app.services.realtime import broadcast_event
 
 
 async def create_log(
@@ -37,7 +38,7 @@ async def create_log(
     # Return log data
     log_dict = log.to_dict()
     log_dict["_id"] = result.inserted_id
-    return {
+    response = {
         "id": str(log_dict["_id"]),
         "source": log_dict["source"],
         "log_type": log_dict["log_type"],
@@ -45,8 +46,31 @@ async def create_log(
         "message": log_dict["message"],
         "metadata": log_dict["metadata"],
         "timestamp": log_dict["timestamp"],
-        "created_at": log_dict["created_at"]
+        "created_at": log_dict["created_at"],
     }
+
+    # Broadcast real-time log update event (fire-and-forget style).
+    try:
+        await broadcast_event(
+            {
+                "type": "LOG_UPDATE",
+                "payload": {
+                    "id": response["id"],
+                    "source": response["source"],
+                    "log_type": response["log_type"],
+                    "severity": response["severity"],
+                    "message": response["message"],
+                    "timestamp": response["timestamp"].isoformat()
+                    if isinstance(response["timestamp"], datetime)
+                    else str(response["timestamp"]),
+                },
+            }
+        )
+    except Exception:
+        # Real-time broadcasting should not break ingestion.
+        pass
+
+    return response
 
 
 async def get_logs(
