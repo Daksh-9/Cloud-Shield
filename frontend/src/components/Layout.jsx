@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { authService } from '../services/auth'
 import Sidebar from './SideBar' 
 import TopBar from './TopBar'
+import { useTheme } from '../context/ThemeContext.jsx'
 
 function Layout() {
   const navigate = useNavigate()
@@ -12,19 +13,10 @@ function Layout() {
 
   // --- UI State ---
   const [isSidebarOpen, setSidebarOpen] = useState(true)
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Check local storage for saved preference
-    return localStorage.getItem('theme') === 'dark'
-  })
+  const { isDarkMode, toggleTheme } = useTheme()
 
   // --- Toggle Handlers ---
   const toggleSidebar = () => setSidebarOpen(!isSidebarOpen)
-  
-  const toggleTheme = () => {
-    const newMode = !isDarkMode
-    setIsDarkMode(newMode)
-    localStorage.setItem('theme', newMode ? 'dark' : 'light')
-  }
 
   useEffect(() => {
     const checkAuth = () => {
@@ -53,7 +45,7 @@ function Layout() {
   if (!isAuthenticated) return null
 
   return (
-    // The outer div applies the 'dark-mode' class if active
+    // The outer div applies the 'dark-mode' class if active (in addition to body)
     <div className={isDarkMode ? 'dark-mode' : ''} style={{ 
       display: 'flex', 
       height: '100vh', 

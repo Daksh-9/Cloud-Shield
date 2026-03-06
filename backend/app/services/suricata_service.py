@@ -3,13 +3,34 @@ import os
 import subprocess
 from typing import List, Optional, Dict, Any
 from datetime import datetime
+from pathlib import Path
+
 from bson import ObjectId
 
 from app.database.connection import get_database
 from app.services.log_service import create_log
+from app.services.realtime import broadcast_event
 from app.config import settings
 
 # --- Event Parsing Functions ---
+
+LIVE_TRAFFIC_LOG_PATH = (
+    Path(__file__).resolve().parents[2] / "logs" / "live_traffic.log"
+)
+
+
+async def _append_live_traffic_log(line: str) -> None:
+    """
+    Append a single line to the live traffic log file in a background thread.
+    """
+
+    def _write() -> None:
+        LIVE_TRAFFIC_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with LIVE_TRAFFIC_LOG_PATH.open("a", encoding="utf-8") as f:
+            f.write(line + "\n")
+
+    await asyncio.to_thread(_write)
+
 
 async def parse_and_store_suricata_event(eve_json: Dict[str, Any]) -> dict:
     """Parse Suricata EVE JSON event and store in MongoDB."""
@@ -21,7 +42,7 @@ async def parse_and_store_suricata_event(eve_json: Dict[str, Any]) -> dict:
     if timestamp_str:
         try:
             timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
-        except:
+        except Exception:
             timestamp = datetime.utcnow()
     else:
         timestamp = datetime.utcnow()
@@ -40,10 +61,14 @@ async def parse_and_store_suricata_event(eve_json: Dict[str, Any]) -> dict:
         alert_data = eve_json.get("alert", {})
         severity = alert_data.get("severity", 1)
         
-        if severity >= 4: log_severity = "critical"
-        elif severity >= 3: log_severity = "error"
-        elif severity >= 2: log_severity = "warning"
-        else: log_severity = "info"
+        if severity >= 4:
+            log_severity = "critical"
+        elif severity >= 3:
+            log_severity = "error"
+        elif severity >= 2:
+            log_severity = "warning"
+        else:
+            log_severity = "info"
         
         await create_log(
             source="suricata",
@@ -57,6 +82,41 @@ async def parse_and_store_suricata_event(eve_json: Dict[str, Any]) -> dict:
             },
             timestamp=timestamp
         )
+
+    # --- Local live traffic log + real-time broadcast ---
+    try:
+        src_ip = eve_json.get("src_ip", "-")
+        dest_ip = eve_json.get("dest_ip", "-")
+        proto = eve_json.get("proto", "-")
+        ts_str = timestamp.isoformat()
+
+        # Only log and broadcast higher-signal events (flows and alerts)
+        if event_type in {"flow", "alert"}:
+            summary = f"{ts_str} | {src_ip} -> {dest_ip} | {proto} | {event_type}"
+            await _append_live_traffic_log(summary)
+
+            payload = {
+                "event_type": event_type,
+                "timestamp": ts_str,
+                "src_ip": src_ip,
+                "dest_ip": dest_ip,
+                "proto": proto,
+            }
+
+            flow = eve_json.get("flow", {})
+            if isinstance(flow, dict):
+                payload["bytes_toserver"] = flow.get("bytes_toserver", 0)
+                payload["bytes_toclient"] = flow.get("bytes_toclient", 0)
+
+            await broadcast_event(
+                {
+                    "type": "LOG_UPDATE",
+                    "payload": payload,
+                }
+            )
+    except Exception:
+        # Do not break ingestion if logging or broadcasting fails.
+        pass
     
     return {
         "id": str(result.inserted_id),

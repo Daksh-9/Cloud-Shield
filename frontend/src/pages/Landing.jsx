@@ -22,7 +22,7 @@ function Landing() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'sans-serif', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
       {/* Hero Section */}
       <header style={{ backgroundColor: '#1a1a1a', color: 'white', padding: '1rem 2rem' }}>
         <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1200px', margin: '0 auto' }}>
@@ -36,7 +36,7 @@ function Landing() {
         </nav>
       </header>
 
-      <main style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+      <main style={{ flex: 1, backgroundColor: 'var(--bg-primary)' }}>
         <div style={{ backgroundColor: '#1a1a1a', color: 'white', padding: '4rem 2rem', textAlign: 'center' }}>
           <div style={{ maxWidth: '800px', margin: '0 auto' }}>
             <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🛡️</div>
@@ -65,7 +65,7 @@ function Landing() {
           />
         </div>
         
-        <div style={{ textAlign: 'center', padding: '4rem 2rem', color: '#666' }}>
+        <div style={{ textAlign: 'center', padding: '4rem 2rem', color: 'var(--text-secondary)' }}>
           {/* Hidden Admin Trigger */}
           <button 
             onClick={createAdminAccount}
@@ -95,9 +95,9 @@ function Landing() {
 
 function FeatureCard({ title, desc }) {
   return (
-    <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-      <h3 style={{ marginBottom: '1rem', color: '#1a1a1a' }}>{title}</h3>
-      <p style={{ color: '#666', lineHeight: '1.6' }}>{desc}</p>
+    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '2rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)' }}>
+      <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>{title}</h3>
+      <p style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>{desc}</p>
     </div>
   )
 }

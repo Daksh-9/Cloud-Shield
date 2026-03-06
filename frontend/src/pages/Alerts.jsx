@@ -90,20 +90,20 @@ function Alerts() {
 
   return (
     <div>
-      <h1 style={{ marginBottom: '2rem', color: '#1a1a1a' }}>Security Alerts</h1>
+      <h1 style={{ marginBottom: '2rem', color: 'var(--text-primary)' }}>Security Alerts</h1>
 
       {/* Filters */}
       <div style={{
-        backgroundColor: '#fff',
+        backgroundColor: 'var(--bg-secondary)',
         padding: '1.5rem',
         borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        boxShadow: 'var(--card-shadow)',
         marginBottom: '2rem'
       }}>
-        <h2 style={{ marginBottom: '1rem', color: '#333', fontSize: '1.2rem' }}>Filters</h2>
+        <h2 style={{ marginBottom: '1rem', color: 'var(--text-primary)', fontSize: '1.2rem' }}>Filters</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#666', fontSize: '0.9rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
               Status
             </label>
             <select
@@ -113,9 +113,11 @@ function Alerts() {
               style={{
                 width: '100%',
                 padding: '0.5rem',
-                border: '1px solid #ddd',
+                border: '1px solid var(--border-color)',
                 borderRadius: '4px',
-                fontSize: '0.9rem'
+                fontSize: '0.9rem',
+                backgroundColor: 'var(--bg-primary)',
+                color: 'var(--text-primary)'
               }}
             >
               <option value="">All</option>
@@ -126,7 +128,7 @@ function Alerts() {
             </select>
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#666', fontSize: '0.9rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
               Severity
             </label>
             <select
@@ -136,9 +138,11 @@ function Alerts() {
               style={{
                 width: '100%',
                 padding: '0.5rem',
-                border: '1px solid #ddd',
+                border: '1px solid var(--border-color)',
                 borderRadius: '4px',
-                fontSize: '0.9rem'
+                fontSize: '0.9rem',
+                backgroundColor: 'var(--bg-primary)',
+                color: 'var(--text-primary)'
               }}
             >
               <option value="">All</option>
@@ -149,7 +153,7 @@ function Alerts() {
             </select>
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#666', fontSize: '0.9rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
               Alert Type
             </label>
             <input
@@ -161,9 +165,11 @@ function Alerts() {
               style={{
                 width: '100%',
                 padding: '0.5rem',
-                border: '1px solid #ddd',
+                border: '1px solid var(--border-color)',
                 borderRadius: '4px',
-                fontSize: '0.9rem'
+                fontSize: '0.9rem',
+                backgroundColor: 'var(--bg-primary)',
+                color: 'var(--text-primary)'
               }}
             />
           </div>
@@ -205,29 +211,29 @@ function Alerts() {
         <div style={{
           padding: '1rem',
           marginBottom: '1rem',
-          backgroundColor: '#fee',
-          color: '#c33',
+          backgroundColor: '#3b1a1a',
+          color: '#ffb4a9',
           borderRadius: '4px',
-          border: '1px solid #fcc'
+          border: '1px solid #b00020'
         }}>
           {error}
         </div>
       )}
 
       <div style={{
-        backgroundColor: '#fff',
+        backgroundColor: 'var(--bg-secondary)',
         padding: '1.5rem',
         borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        boxShadow: 'var(--card-shadow)'
       }}>
-        <h2 style={{ marginBottom: '1rem', color: '#333' }}>
+        <h2 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>
           Alert List ({alerts.length})
         </h2>
 
         {loading ? (
           <p>Loading alerts...</p>
         ) : alerts.length === 0 ? (
-          <p style={{ color: '#666' }}>No alerts found.</p>
+          <p style={{ color: 'var(--text-secondary)' }}>No alerts found.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {alerts.map((alert) => (
@@ -240,7 +246,7 @@ function Alerts() {
                   backgroundColor: '#f9f9f9'
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
                   <div style={{ flex: 1 }}>
                     <h3 style={{ margin: 0, marginBottom: '0.5rem', color: '#333' }}>{alert.title}</h3>
                     <p style={{ margin: 0, color: '#666', marginBottom: '0.5rem' }}>{alert.description}</p>
@@ -272,13 +278,13 @@ function Alerts() {
                     </span>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: '#666', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: 'var(--text-secondary)', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
                   <span><strong>Type:</strong> {alert.alert_type}</span>
                   {alert.source && <span><strong>Source:</strong> {alert.source}</span>}
                   <span><strong>Created:</strong> {formatDate(alert.created_at)}</span>
                 </div>
                 {alert.notes && (
-                  <div style={{ marginTop: '0.5rem', padding: '0.5rem', backgroundColor: '#fff', borderRadius: '4px', fontSize: '0.875rem' }}>
+                  <div style={{ marginTop: '0.5rem', padding: '0.5rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '4px', fontSize: '0.875rem', color: 'var(--text-primary)' }}>
                     <strong>Notes:</strong> {alert.notes}
                   </div>
                 )}

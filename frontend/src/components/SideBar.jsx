@@ -24,8 +24,8 @@ function Sidebar({ user, onLogout, isOpen }) {
   return (
     <div style={{ 
       width: isOpen ? '260px' : '0px', 
-      backgroundColor: '#1a1a1a', 
-      color: '#fff', 
+      backgroundColor: 'var(--sidebar-bg)', 
+      color: 'var(--sidebar-text)', 
       display: 'flex', 
       flexDirection: 'column',
       flexShrink: 0,
@@ -34,7 +34,7 @@ function Sidebar({ user, onLogout, isOpen }) {
       transition: 'width 0.3s ease'
     }}>
       <div style={{ padding: '1.5rem', borderBottom: '1px solid #333' }}>
-        <Link to="/" style={{ color: '#fff', textDecoration: 'none', fontSize: '1.25rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <Link to="/" style={{ color: 'var(--sidebar-text)', textDecoration: 'none', fontSize: '1.25rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span>🛡️</span> Cloud Shield
         </Link>
       </div>
@@ -48,7 +48,7 @@ function Sidebar({ user, onLogout, isOpen }) {
               display: 'flex',
               alignItems: 'center',
               padding: '0.75rem 1.5rem',
-              color: location.pathname === item.path ? '#fff' : '#aaa',
+              color: location.pathname === item.path ? 'var(--sidebar-text)' : '#aaa',
               backgroundColor: location.pathname === item.path ? '#2196F3' : 'transparent',
               textDecoration: 'none',
               transition: 'background-color 0.2s',

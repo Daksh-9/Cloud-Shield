@@ -76,45 +76,45 @@ function Register() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f5', padding: '2rem' }}>
-      <div style={{ width: '100%', maxWidth: '450px', backgroundColor: 'white', padding: '2.5rem', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-        <Link to="/" style={{ textDecoration: 'none', color: '#666', display: 'block', marginBottom: '1.5rem' }}>← Back to Home</Link>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-primary)', padding: '2rem', color: 'var(--text-primary)' }}>
+      <div style={{ width: '100%', maxWidth: '450px', backgroundColor: 'var(--bg-secondary)', padding: '2.5rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)' }}>
+        <Link to="/" style={{ textDecoration: 'none', color: 'var(--text-secondary)', display: 'block', marginBottom: '1.5rem' }}>← Back to Home</Link>
         
-        <h1 style={{ marginBottom: '2rem', color: '#1a1a1a', textAlign: 'center' }}>Create Your Account</h1>
+        <h1 style={{ marginBottom: '2rem', color: 'var(--text-primary)', textAlign: 'center' }}>Create Your Account</h1>
         
         {error && (
-          <div style={{ padding: '0.75rem', marginBottom: '1rem', backgroundColor: '#fee', color: '#c33', borderRadius: '4px', border: '1px solid #fcc' }}>
+          <div style={{ padding: '0.75rem', marginBottom: '1rem', backgroundColor: '#3b1a1a', color: '#ffb4a9', borderRadius: '4px', border: '1px solid #b00020' }}>
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>Username (Full Name)</label>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Username (Full Name)</label>
             <input
               type="text"
               name="fullName"
               value={formData.fullName}
               onChange={handleChange}
               required
-              style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
+              style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
             />
           </div>
 
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>Email Address</label>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Email Address</label>
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
               required
-              style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
+              style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
             />
           </div>
 
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>Password</label>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Password</label>
             <div style={{ position: 'relative' }}>
               <input
                 type={showPassword ? "text" : "password"}
@@ -123,7 +123,7 @@ function Register() {
                 onChange={handleChange}
                 required
                 minLength={8}
-                style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
               />
               <button 
                 type="button"
@@ -142,7 +142,7 @@ function Register() {
                     <span style={{ color: getStrengthColor() }}>Strength: {getStrengthLabel()}</span>
                 </div>
             </div>
-            <ul style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.5rem', listStyle: 'none', padding: 0 }}>
+            <ul style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem', listStyle: 'none', padding: 0 }}>
                 <li style={{ color: formData.password.length >= 8 ? '#2ecc71' : '#ccc' }}>✓ At least 8 characters</li>
                 <li style={{ color: /[A-Z]/.test(formData.password) ? '#2ecc71' : '#ccc' }}>✓ Contains uppercase</li>
                 <li style={{ color: /[0-9]/.test(formData.password) ? '#2ecc71' : '#ccc' }}>✓ Contains number</li>
@@ -150,14 +150,14 @@ function Register() {
           </div>
 
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>Confirm Password</label>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Confirm Password</label>
             <input
               type="password"
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
               required
-              style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px', borderColor: (formData.confirmPassword && formData.password !== formData.confirmPassword) ? '#e74c3c' : '#ddd' }}
+              style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', borderColor: (formData.confirmPassword && formData.password !== formData.confirmPassword) ? '#e74c3c' : 'var(--border-color)', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
             />
             {formData.confirmPassword && formData.password !== formData.confirmPassword && (
                 <small style={{ color: '#e74c3c' }}>Passwords do not match</small>
@@ -172,7 +172,7 @@ function Register() {
               onChange={handleChange}
               id="terms"
             />
-            <label htmlFor="terms" style={{ fontSize: '0.9rem', color: '#666' }}>
+            <label htmlFor="terms" style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
               I agree to Terms of Service and Privacy Policy
             </label>
           </div>
@@ -186,8 +186,8 @@ function Register() {
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', color: '#666' }}>
-          Already have an account? <Link to="/login" style={{ color: '#2196F3', textDecoration: 'none' }}>Sign In</Link>
+        <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+          Already have an account? <Link to="/login" style={{ color: 'var(--accent-color)', textDecoration: 'none' }}>Sign In</Link>
         </p>
         
         <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.8rem', color: '#999' }}>

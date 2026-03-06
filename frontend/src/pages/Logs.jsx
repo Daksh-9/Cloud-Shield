@@ -70,20 +70,20 @@ function Logs() {
 
   return (
     <div>
-      <h1 style={{ marginBottom: '2rem', color: '#1a1a1a' }}>Security Logs</h1>
+      <h1 style={{ marginBottom: '2rem', color: 'var(--text-primary)' }}>Security Logs</h1>
 
       {/* Filters */}
       <div style={{
-        backgroundColor: '#fff',
+        backgroundColor: 'var(--bg-secondary)',
         padding: '1.5rem',
         borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        boxShadow: 'var(--card-shadow)',
         marginBottom: '2rem'
       }}>
-        <h2 style={{ marginBottom: '1rem', color: '#333', fontSize: '1.2rem' }}>Filters</h2>
+        <h2 style={{ marginBottom: '1rem', color: 'var(--text-primary)', fontSize: '1.2rem' }}>Filters</h2>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#666', fontSize: '0.9rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
               Source
             </label>
             <input
@@ -95,14 +95,16 @@ function Logs() {
               style={{
                 width: '100%',
                 padding: '0.5rem',
-                border: '1px solid #ddd',
+                border: '1px solid var(--border-color)',
                 borderRadius: '4px',
-                fontSize: '0.9rem'
+                fontSize: '0.9rem',
+                backgroundColor: 'var(--bg-primary)',
+                color: 'var(--text-primary)'
               }}
             />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#666', fontSize: '0.9rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
               Severity
             </label>
             <select
@@ -112,9 +114,11 @@ function Logs() {
               style={{
                 width: '100%',
                 padding: '0.5rem',
-                border: '1px solid #ddd',
+                border: '1px solid var(--border-color)',
                 borderRadius: '4px',
-                fontSize: '0.9rem'
+                fontSize: '0.9rem',
+                backgroundColor: 'var(--bg-primary)',
+                color: 'var(--text-primary)'
               }}
             >
               <option value="">All</option>
@@ -125,7 +129,7 @@ function Logs() {
             </select>
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#666', fontSize: '0.9rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
               Log Type
             </label>
             <input
@@ -137,9 +141,11 @@ function Logs() {
               style={{
                 width: '100%',
                 padding: '0.5rem',
-                border: '1px solid #ddd',
+                border: '1px solid var(--border-color)',
                 borderRadius: '4px',
-                fontSize: '0.9rem'
+                fontSize: '0.9rem',
+                backgroundColor: 'var(--bg-primary)',
+                color: 'var(--text-primary)'
               }}
             />
           </div>
@@ -181,29 +187,29 @@ function Logs() {
         <div style={{
           padding: '1rem',
           marginBottom: '1rem',
-          backgroundColor: '#fee',
-          color: '#c33',
+          backgroundColor: '#3b1a1a',
+          color: '#ffb4a9',
           borderRadius: '4px',
-          border: '1px solid #fcc'
+          border: '1px solid #b00020'
         }}>
           {error}
         </div>
       )}
 
       <div style={{
-        backgroundColor: '#fff',
+        backgroundColor: 'var(--bg-secondary)',
         padding: '1.5rem',
         borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        boxShadow: 'var(--card-shadow)'
       }}>
-        <h2 style={{ marginBottom: '1rem', color: '#333' }}>
+        <h2 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>
           Log Entries ({logs.length})
         </h2>
 
         {loading ? (
           <p>Loading logs...</p>
         ) : logs.length === 0 ? (
-          <p style={{ color: '#666' }}>No logs found.</p>
+          <p style={{ color: 'var(--text-secondary)' }}>No logs found.</p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {logs.map((log) => (
@@ -216,7 +222,7 @@ function Logs() {
                   backgroundColor: '#f9f9f9'
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
                   <div>
                     <strong style={{ color: '#333' }}>{log.message}</strong>
                   </div>
@@ -235,13 +241,13 @@ function Logs() {
                     </span>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: '#666', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
                   <span><strong>Source:</strong> {log.source}</span>
                   <span><strong>Type:</strong> {log.log_type}</span>
                   <span><strong>Time:</strong> {formatDate(log.timestamp)}</span>
                 </div>
                 {log.metadata && Object.keys(log.metadata).length > 0 && (
-                  <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#666' }}>
+                  <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                     <strong>Metadata:</strong> {JSON.stringify(log.metadata)}
                   </div>
                 )}
