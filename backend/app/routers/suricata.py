@@ -26,17 +26,26 @@ from app.services.suricata_service import (
 )
 from app.middleware.auth import get_current_user
 
+# --- IMPORT THE WEBSOCKET BROADCASTER ---
+from app.services.realtime import broadcast_event
+
 router = APIRouter(prefix="/suricata", tags=["suricata"])
 
 
 @router.post("/events", response_model=SuricataEventResponse, status_code=status.HTTP_201_CREATED)
 async def ingest_suricata_event(
-    event_data: dict,
-    current_user: dict = Depends(get_current_user)
+    event_data: dict
 ):
-    """Ingest a Suricata EVE JSON event."""
+    """Ingest a Suricata EVE JSON event (Machine-to-Machine, no auth required)."""
     try:
         event = await parse_and_store_suricata_event(event_data)
+        
+        # --- BROADCAST THE EVENT TO THE FRONTEND ---
+        await broadcast_event({
+            "type": "LOG_UPDATE", 
+            "payload": event
+        })
+        
         return SuricataEventResponse(
             id=event["id"],
             event_type=event["event_type"],
@@ -53,16 +62,22 @@ async def ingest_suricata_event(
 
 @router.post("/events/batch", status_code=status.HTTP_201_CREATED)
 async def ingest_suricata_events_batch(
-    events: List[dict],
-    current_user: dict = Depends(get_current_user)
+    events: List[dict]
 ):
-    """Ingest multiple Suricata EVE JSON events."""
+    """Ingest multiple Suricata EVE JSON events (Machine-to-Machine, no auth required)."""
     results = []
     errors = []
     
     for idx, event_data in enumerate(events):
         try:
             event = await parse_and_store_suricata_event(event_data)
+            
+            # --- BROADCAST EACH EVENT IN THE BATCH ---
+            await broadcast_event({
+                "type": "LOG_UPDATE", 
+                "payload": event
+            })
+            
             results.append(event)
         except Exception as e:
             errors.append({"index": idx, "error": str(e)})
@@ -236,4 +251,3 @@ async def reload_suricata_rules(
     """Reload Suricata rules."""
     result = await reload_suricata()
     return result
-

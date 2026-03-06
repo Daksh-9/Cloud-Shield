@@ -9,8 +9,8 @@ from requests.exceptions import ConnectionError
 # Update this path to exactly where Suricata generates its eve.json on your Windows machine
 EVE_JSON_PATH = r"C:\Program Files\Suricata\log\eve.json" 
 
-# The endpoint in your FastAPI backend that receives the logs
-API_ENDPOINT = "http://localhost:8000/api/suricata/events"
+# The endpoint in your FastAPI backend that receives the logs (Updated to remove /api)
+API_ENDPOINT = "http://localhost:8000/suricata/events"
 
 # Set up basic logging so we can see what the shipper is doing
 logging.basicConfig(
