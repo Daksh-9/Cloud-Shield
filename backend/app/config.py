@@ -38,13 +38,16 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    # --- Suricata (Windows Native Configuration) ---
-    # Default points to standard Windows installation path
+    # --- Suricata (Windows Native & Subprocess Configuration) ---
     SURICATA_RULES_PATH: str = os.getenv(
         "SURICATA_RULES_PATH", 
         r"C:\Program Files\Suricata\rules\local.rules"
     )
-    SURICATA_SERVICE_NAME: str = os.getenv("SURICATA_SERVICE_NAME", "Suricata")
+    
+    # --- NEW: Subprocess Variables ---
+    SURICATA_EXEC_PATH: str = os.getenv("SURICATA_EXEC_PATH", r"C:\Program Files\Suricata\suricata.exe")
+    SURICATA_CONFIG_PATH: str = os.getenv("SURICATA_CONFIG_PATH", r"C:\Program Files\Suricata\suricata.yaml")
+    SURICATA_INTERFACE: str = os.getenv("SURICATA_INTERFACE", "Ethernet") # Change this to your active adapter (e.g., Wi-Fi)
     
     model_config = SettingsConfigDict(
         env_file=str(env_path),

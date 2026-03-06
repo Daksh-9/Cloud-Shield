@@ -1,271 +1,274 @@
-import { useState, useEffect, useRef } from 'react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { monitoringService } from '../services/monitoring'
+import React, { useState, useEffect } from 'react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { Activity, Globe, FileDigit, ShieldAlert, Map as MapIcon } from 'lucide-react';
+import { ComposableMap, Geographies, Geography } from "react-simple-maps";
 
-function LiveTraffic() {
-  const [metrics, setMetrics] = useState({
-    packets_sec: 127400,
-    flows_sec: 5200,
-    bandwidth_gbps: 2.3,
-    alerts_count: 12
-  })
-  
-  const [trafficHistory, setTrafficHistory] = useState(
-    Array.from({ length: 20 }, (_, i) => ({
-      time: `${10 + Math.floor(i/2)}:${(i%2)*30}`.padStart(5, '0'),
-      value: 100000 + Math.random() * 50000
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+const IDLE_COLOR = ['#94a3b8']; 
+
+const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+
+export default function LiveTraffic() {
+  const [stats, setStats] = useState({
+    protocols: [],
+    topLocations: [],
+    totalBandwidth: 0,
+    timeline: Array.from({ length: 15 }, (_, i) => ({
+      time: new Date(Date.now() - (15 - i) * 3000).toLocaleTimeString(),
+      size: 1
     }))
-  )
+  });
+  
+  const [loading, setLoading] = useState(true);
+  
+  // NEW: Reactive Map Tooltip State
+  const [mapTooltip, setMapTooltip] = useState({ show: false, content: "", x: 0, y: 0 });
 
-  const [topIps, setTopIps] = useState([
-    { ip: '203.0.113.45', packets: '24.5K', bytes: '18.2 MB', protocol: 'TCP', percent: 75 },
-    { ip: '198.51.100.23', packets: '12.1K', bytes: '9.4 MB', protocol: 'UDP', percent: 38 },
-    { ip: '192.0.2.67', packets: '8.3K', bytes: '6.1 MB', protocol: 'TCP', percent: 26 },
-    { ip: '203.0.113.89', packets: '4.2K', bytes: '3.8 MB', protocol: 'ICMP', percent: 13 },
-  ])
+  const fetchTrafficData = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/monitoring/live-traffic-stats');
+      if (response.ok) {
+        const data = await response.json();
+        
+        setStats(prev => {
+          const newTime = new Date().toLocaleTimeString();
+          const newSize = data.total_bandwidth_mb > 0 
+            ? Math.floor(data.total_bandwidth_mb * 1024 * 1024) 
+            : 1; 
 
-  const [protocols, setProtocols] = useState([
-    { name: 'TCP', value: 64, color: '#2196F3' },
-    { name: 'UDP', value: 28, color: '#FF9800' },
-    { name: 'ICMP', value: 5, color: '#F44336' },
-    { name: 'Other', value: 3, color: '#9E9E9E' },
-  ])
+          const newTimeline = [...prev.timeline.slice(1), { time: newTime, size: newSize }];
 
-  const [isRecording, setIsRecording] = useState(true)
-  const wsRef = useRef(null)
-
-  // Detect dark mode for Recharts colors
-  const [isDarkMode, setIsDarkMode] = useState(false);
+          return {
+            protocols: data.protocols,
+            topLocations: data.top_locations,
+            totalBandwidth: data.total_bandwidth_mb,
+            timeline: newTimeline
+          };
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch live traffic:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Check initial mode
-    const checkMode = () => setIsDarkMode(document.body.classList.contains('dark-mode'));
-    checkMode();
-
-    // Listen for changes (MutationObserver is best, but interval is simpler for now)
-    const observer = new MutationObserver(checkMode);
-    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-
-    return () => observer.disconnect();
+    fetchTrafficData();
+    const interval = setInterval(fetchTrafficData, 3000);
+    return () => clearInterval(interval);
   }, []);
 
+  if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading Live Traffic...</div>;
+
+  const isIdle = stats.totalBandwidth === 0;
+
+  const displayProtocols = stats.protocols.length > 0 
+    ? stats.protocols 
+    : [{ name: "Placeholder Protocol", value: 1 }];
+
+  const displayLocations = stats.topLocations.length > 0 
+    ? stats.topLocations 
+    : [
+        { ip: "192.168.1.1", bytes: 1, country: "Local" },
+        { ip: "10.0.0.1", bytes: 1, country: "Local" },
+        { ip: "172.16.0.1", bytes: 1, country: "Local" }
+      ];
+
+  const currentPieColors = isIdle ? IDLE_COLOR : COLORS;
+
+  const countryData = {};
+  if (!isIdle) {
+    displayLocations.forEach(loc => {
+      if (loc.country && loc.country !== "Local" && loc.country !== "-" && loc.country !== "Unknown") {
+        countryData[loc.country] = (countryData[loc.country] || 0) + loc.bytes;
+      }
+    });
+  }
+
   return (
-    <div style={{ padding: '1rem', maxWidth: '1600px', margin: '0 auto', color: 'var(--text-primary)' }}>
+    <div style={{ padding: '1.5rem', fontFamily: 'system-ui, sans-serif', position: 'relative' }}>
       
-      {/* Header Area */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
-        <div>
-          <h1 style={{ margin: 0, color: 'var(--text-primary)' }}>Live Traffic Monitoring</h1>
-          <p style={{ margin: '0.5rem 0 0', color: 'var(--text-secondary)' }}>Real-time network traffic analysis and flow detection</p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ display: 'flex', alignItems: 'center', color: isRecording ? '#d32f2f' : 'var(--text-secondary)', fontWeight: 'bold' }}>
-            <span style={{ 
-              width: '10px', height: '10px', backgroundColor: isRecording ? '#d32f2f' : 'var(--border-color)', 
-              borderRadius: '50%', display: 'inline-block', marginRight: '8px',
-              boxShadow: isRecording ? '0 0 8px #d32f2f' : 'none',
-              animation: isRecording ? 'pulse 1.5s infinite' : 'none'
-            }}></span>
-            {isRecording ? 'Recording' : 'Paused'}
-          </span>
-          <button 
-            onClick={() => setIsRecording(!isRecording)} 
-            style={{ 
-              padding: '0.5rem 1rem', 
-              cursor: 'pointer', 
-              border: '1px solid var(--border-color)', 
-              background: 'var(--bg-secondary)', 
-              color: 'var(--text-primary)',
-              borderRadius: '4px' 
-            }}
-          >
-            {isRecording ? 'Pause' : 'Resume'}
-          </button>
-        </div>
-      </div>
-
-      {/* Metrics Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-        {[
-          { label: 'Packets/s', value: metrics.packets_sec.toLocaleString(), sub: '▲ +12%', color: '#2196F3' },
-          { label: 'Flows/s', value: metrics.flows_sec.toLocaleString(), sub: '▼ -3%', color: '#FF9800' },
-          { label: 'Bandwidth', value: `${metrics.bandwidth_gbps} Gb/s`, sub: '▲ +8%', color: '#00C853' },
-          { label: 'Alerts', value: metrics.alerts_count, sub: '▲ +4', color: '#F44336' }
-        ].map((item, i) => (
-          <div key={i} style={{ 
-            backgroundColor: 'var(--bg-secondary)', 
-            padding: '1.5rem', 
-            borderRadius: '8px', 
-            boxShadow: 'var(--card-shadow)', 
-            borderTop: `4px solid ${item.color}`,
-            border: '1px solid var(--border-color)'
-          }}>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>{item.label}</div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{item.value}</div>
-            <div style={{ fontSize: '0.8rem', marginTop: '0.5rem', color: item.sub.includes('▲') ? '#00C853' : '#d32f2f' }}>
-              {item.sub}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Main Content Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(600px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
-        
-        {/* Traffic Graph */}
-        <div style={{ 
-          backgroundColor: 'var(--bg-secondary)', 
-          padding: '1.5rem', 
-          borderRadius: '8px', 
-          boxShadow: 'var(--card-shadow)',
-          border: '1px solid var(--border-color)'
+      {/* NEW: Floating Tooltip for the Map */}
+      {mapTooltip.show && (
+        <div style={{
+          position: 'fixed',
+          top: mapTooltip.y - 40,
+          left: mapTooltip.x + 15,
+          backgroundColor: '#1e293b',
+          color: '#f8fafc',
+          padding: '0.5rem 1rem',
+          borderRadius: '0.375rem',
+          fontSize: '0.875rem',
+          fontWeight: '500',
+          pointerEvents: 'none',
+          zIndex: 1000,
+          boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
         }}>
-          <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Traffic Volume (Last 10 min)</h3>
+          {mapTooltip.content}
+        </div>
+      )}
+
+      {/* Header Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+        <div style={{ padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '1rem', backgroundColor: '#f8fafc' }}>
+          <Activity size={24} color="#3b82f6" />
+          <div>
+            <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>Total Monitored Bandwidth</p>
+            <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold' }}>{isIdle ? 1 : stats.totalBandwidth} MB</h3>
+          </div>
+        </div>
+        <div style={{ padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '1rem', backgroundColor: '#f8fafc' }}>
+          <FileDigit size={24} color="#10b981" />
+          <div>
+            <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>Active Protocols</p>
+            <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold' }}>{isIdle ? 1 : stats.protocols.length} Detected</h3>
+          </div>
+        </div>
+        <div style={{ padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '1rem', backgroundColor: '#f8fafc' }}>
+          <ShieldAlert size={24} color={isIdle ? "#f59e0b" : "#10b981"} />
+          <div>
+            <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>System Status</p>
+            <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: isIdle ? "#f59e0b" : "#10b981" }}>{isIdle ? "Monitoring..." : "Active"}</h3>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
+        
+        {/* Geographic Threat Map */}
+        <div style={{ padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', backgroundColor: '#ffffff', gridColumn: '1 / -1' }}>
+          <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
+            <MapIcon size={20} style={{ marginRight: '0.5rem' }}/> Global Traffic Origins
+          </h3>
+          <div style={{ width: '100%', backgroundColor: '#f8fafc', borderRadius: '0.5rem', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+            {/* FORCE WIDESCREEN ASPECT RATIO (1000x400) */}
+            <ComposableMap projectionConfig={{ scale: 140 }} width={1000} height={400} style={{ width: "100%", height: "auto", display: "block" }}>
+              <Geographies geography={geoUrl}>
+                {({ geographies }) =>
+                  geographies.map((geo) => {
+                    const geoName = geo.properties.name;
+                    const searchName = geoName === "United States of America" ? "United States" : geoName;
+                    
+                    const trafficBytes = countryData[searchName] || 0;
+                    const hasTraffic = trafficBytes > 0;
+                    
+                    let fillCol = "#e2e8f0"; 
+                    if (isIdle) fillCol = "#cbd5e1"; 
+                    else if (hasTraffic) fillCol = "#3b82f6"; 
+
+                    return (
+                      <Geography
+                        key={geo.rsmKey}
+                        geography={geo}
+                        fill={fillCol}
+                        stroke="#ffffff"
+                        strokeWidth={0.5}
+                        // REACTIVE HOVER EVENTS
+                        onMouseEnter={(e) => {
+                          setMapTooltip({ 
+                            show: true, 
+                            content: `${geoName}: ${isIdle ? "0" : trafficBytes} Bytes`, 
+                            x: e.clientX, 
+                            y: e.clientY 
+                          });
+                        }}
+                        onMouseMove={(e) => {
+                          setMapTooltip(prev => ({ ...prev, x: e.clientX, y: e.clientY }));
+                        }}
+                        onMouseLeave={() => {
+                          setMapTooltip({ show: false, content: "", x: 0, y: 0 });
+                        }}
+                        style={{
+                          default: { outline: "none", transition: "all 250ms" },
+                          hover: { fill: isIdle ? "#94a3b8" : (hasTraffic ? "#1d4ed8" : "#94a3b8"), outline: "none", cursor: "crosshair" },
+                          pressed: { outline: "none" },
+                        }}
+                      />
+                    );
+                  })
+                }
+              </Geographies>
+            </ComposableMap>
+          </div>
+        </div>
+
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
+        
+        {/* Top Locations (Bar Chart) */}
+        <div style={{ padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', backgroundColor: '#ffffff' }}>
+          <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
+            <Globe size={20} style={{ marginRight: '0.5rem' }}/> Top IPs by Volume
+          </h3>
           <div style={{ height: '300px', width: '100%' }}>
-            <ResponsiveContainer>
-              <LineChart data={trafficHistory}>
-                <CartesianGrid 
-                  strokeDasharray="3 3" 
-                  vertical={false} 
-                  stroke={isDarkMode ? "#333" : "#eee"} // Dynamic Stroke
-                />
-                <XAxis 
-                  dataKey="time" 
-                  stroke={isDarkMode ? "#888" : "#666"} 
-                  fontSize={12} 
-                  tickLine={false} 
-                  axisLine={false} 
-                />
-                <YAxis 
-                  stroke={isDarkMode ? "#888" : "#666"} 
-                  fontSize={12} 
-                  tickLine={false} 
-                  axisLine={false} 
-                  tickFormatter={(value) => `${value/1000}K`} 
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    border: 'none', 
-                    borderRadius: '4px', 
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-                    backgroundColor: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)'
-                  }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="#2196F3" 
-                  strokeWidth={3} 
-                  dot={false} 
-                  activeDot={{ r: 6 }} 
-                />
-              </LineChart>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={displayLocations} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" domain={[0, isIdle ? 2 : 'auto']} />
+                <YAxis dataKey="ip" type="category" width={100} />
+                {!isIdle && <RechartsTooltip />}
+                <Bar dataKey="bytes" fill={isIdle ? "#cbd5e1" : "#3b82f6"} radius={[0, 4, 4, 0]} name="Bytes Transferred">
+                  {!isIdle && displayLocations.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Top Source IPs */}
-        <div style={{ 
-          backgroundColor: 'var(--bg-secondary)', 
-          padding: '1.5rem', 
-          borderRadius: '8px', 
-          boxShadow: 'var(--card-shadow)',
-          border: '1px solid var(--border-color)'
-        }}>
-          <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Top Source IPs</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {topIps.map((ip, i) => (
-              <div key={i} style={{ position: 'relative' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', fontSize: '0.9rem', position: 'relative', zIndex: 2 }}>
-                  <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{ip.ip}</span>
-                  <span style={{ color: 'var(--text-secondary)' }}>{ip.packets} pkts</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem', position: 'relative', zIndex: 2 }}>
-                  <span>{ip.protocol}</span>
-                  <span>{ip.bytes}</span>
-                </div>
-                <div style={{ 
-                  height: '4px', 
-                  width: '100%', 
-                  backgroundColor: 'var(--bg-primary)', 
-                  borderRadius: '2px', 
-                  overflow: 'hidden' 
-                }}>
-                  <div style={{ 
-                    height: '100%', 
-                    width: `${ip.percent}%`, 
-                    backgroundColor: ip.protocol === 'TCP' ? '#2196F3' : ip.protocol === 'UDP' ? '#FF9800' : '#607D8B' 
-                  }}></div>
-                </div>
-              </div>
-            ))}
+        {/* Protocol Distribution (Pie Chart) */}
+        <div style={{ padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', backgroundColor: '#ffffff' }}>
+          <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', marginBottom: '1rem' }}>Protocol Distribution</h3>
+          <div style={{ height: '300px', width: '100%' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={displayProtocols}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                  stroke="none"
+                >
+                  {displayProtocols.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={currentPieColors[index % currentPieColors.length]} />
+                  ))}
+                </Pie>
+                {!isIdle && <RechartsTooltip />}
+              </PieChart>
+            </ResponsiveContainer>
           </div>
         </div>
-      </div>
 
-      {/* Bottom Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem' }}>
-        
-        {/* Protocol Distribution */}
-        <div style={{ 
-          backgroundColor: 'var(--bg-secondary)', 
-          padding: '1.5rem', 
-          borderRadius: '8px', 
-          boxShadow: 'var(--card-shadow)',
-          border: '1px solid var(--border-color)'
-        }}>
-          <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Protocol Distribution</h3>
-          {protocols.map((p, i) => (
-            <div key={i} style={{ marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{p.name}</span>
-                <span style={{ color: 'var(--text-secondary)' }}>{p.value}%</span>
-              </div>
-              <div style={{ height: '8px', backgroundColor: 'var(--bg-primary)', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ width: `${p.value}%`, height: '100%', backgroundColor: p.color }}></div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Geographic Map Placeholder */}
-        <div style={{ 
-          backgroundColor: 'var(--bg-secondary)', 
-          padding: '1.5rem', 
-          borderRadius: '8px', 
-          boxShadow: 'var(--card-shadow)',
-          border: '1px solid var(--border-color)'
-        }}>
-          <h3 style={{ marginTop: 0, marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Geographic Source Map</h3>
-          <div style={{ 
-            height: '200px', 
-            backgroundColor: 'var(--bg-primary)', 
-            borderRadius: '8px', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            color: 'var(--accent-color)',
-            border: '2px dashed var(--border-color)'
-          }}>
-            <div style={{ textAlign: 'center' }}>
-              <span style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}>🌍</span>
-              [Map Component]
-            </div>
+        {/* Timeline (Area Chart) */}
+        <div style={{ padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', backgroundColor: '#ffffff', gridColumn: '1 / -1' }}>
+          <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', marginBottom: '1rem' }}>Live Message Size (Bytes/sec)</h3>
+          <div style={{ height: '300px', width: '100%' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={stats.timeline}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="time" />
+                <YAxis domain={[0, isIdle ? 2 : 'auto']} />
+                {!isIdle && <RechartsTooltip />}
+                <Area 
+                  type="monotone" 
+                  dataKey="size" 
+                  stroke={isIdle ? "#94a3b8" : "#10b981"} 
+                  fill={isIdle ? "#f1f5f9" : "#d1fae5"} 
+                  name="Bytes" 
+                  isAnimationActive={false} 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
       </div>
-      
-      <style>{`
-        @keyframes pulse {
-          0% { opacity: 1; }
-          50% { opacity: 0.5; }
-          100% { opacity: 1; }
-        }
-      `}</style>
     </div>
-  )
+  );
 }
-
-export default LiveTraffic

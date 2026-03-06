@@ -1,139 +1,95 @@
-"""
-Live monitoring endpoints for real-time data.
-"""
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
-from typing import List
-import asyncio
-import json
+import os
+import geoip2.database
+import geoip2.errors
+from fastapi import APIRouter
+from typing import Dict, Any
+from app.database.connection import get_database
 
-from app.middleware.auth import get_current_user
-from app.services.metrics_service import get_live_metrics, get_recent_logs, get_recent_alerts
-from app.utils.jwt import verify_token
+router = APIRouter(prefix="/api/monitoring", tags=["monitoring"])
 
-router = APIRouter(prefix="/monitoring", tags=["monitoring"])
+# --- GeoIP Setup ---
+# Locate the database file relative to this script
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+GEOIP_DB_PATH = os.path.join(BASE_DIR, "data", "GeoLite2-Country.mmdb")
 
-# WebSocket connection manager
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: List[WebSocket] = []
+# Load it into memory once when the router imports
+geoip_reader = None
+if os.path.exists(GEOIP_DB_PATH):
+    geoip_reader = geoip2.database.Reader(GEOIP_DB_PATH)
+    print(f"🌍 GeoIP Database loaded successfully.")
+else:
+    print(f"⚠️ GeoIP Database not found at {GEOIP_DB_PATH}. Geolocation will show 'Unknown'.")
 
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
-
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
-
-    async def broadcast(self, message: dict):
-        """Broadcast message to all connected clients."""
-        disconnected = []
-        for connection in self.active_connections:
-            try:
-                await connection.send_json(message)
-            except Exception:
-                disconnected.append(connection)
+def get_country_from_ip(ip_address: str) -> str:
+    """Safely converts an IP to a Country Name."""
+    if not geoip_reader:
+        return "Unknown (DB Missing)"
         
-        # Remove disconnected clients
-        for conn in disconnected:
-            self.active_connections.remove(conn)
-
-manager = ConnectionManager()
-
-
-@router.get("/metrics")
-async def get_metrics(current_user: dict = Depends(get_current_user)):
-    """Get current system metrics."""
-    metrics = await get_live_metrics()
-    return metrics
-
-
-@router.get("/recent-logs")
-async def get_recent_logs_endpoint(
-    limit: int = 10,
-    current_user: dict = Depends(get_current_user)
-):
-    """Get recent logs for live feed."""
-    logs = await get_recent_logs(limit=limit)
-    return {"logs": logs}
-
-
-@router.get("/recent-alerts")
-async def get_recent_alerts_endpoint(
-    limit: int = 10,
-    current_user: dict = Depends(get_current_user)
-):
-    """Get recent alerts for live feed."""
-    alerts = await get_recent_alerts(limit=limit)
-    return {"alerts": alerts}
-
-
-@router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket, token: str = None):
-    """
-    WebSocket endpoint for real-time monitoring updates.
-    Requires authentication token as query parameter.
-    """
-    # Verify token
-    if not token:
-        await websocket.close(code=1008, reason="Authentication required")
-        return
-    
-    payload = verify_token(token)
-    if not payload:
-        await websocket.close(code=1008, reason="Invalid token")
-        return
-    
-    await manager.connect(websocket)
-    
+    # Handle private/local IPs so they don't throw errors
+    if ip_address.startswith(("192.168.", "10.", "172.16.", "127.")):
+        return "Local Network"
+        
     try:
-        # Send initial metrics
-        metrics = await get_live_metrics()
-        await websocket.send_json({
-            "type": "metrics",
-            "data": metrics
-        })
+        response = geoip_reader.country(ip_address)
+        return response.country.name or "Unknown"
+    except geoip2.errors.AddressNotFoundError:
+        return "Unknown IP"
+    except Exception:
+        return "Error"
+
+
+@router.get("/live-traffic-stats")
+async def get_live_traffic_stats():
+    """Aggregates real-time traffic stats and maps IPs to Geo-locations."""
+    db = get_database()
+    
+    pipeline = [
+        {"$match": {"event_type": "flow"}},
+        {"$sort": {"timestamp": -1}},
+        {"$limit": 1000} 
+    ]
+    
+    recent_flows = await db.suricata_events.aggregate(pipeline).to_list(1000)
+    
+    stats = {
+        "protocols": {},
+        "top_ips": {}, 
+        "total_bytes": 0
+    }
+    
+    for doc in recent_flows:
+        raw = doc.get("raw_event", {})
+        proto = raw.get("proto", "UNKNOWN")
+        src_ip = raw.get("src_ip", "Unknown")
         
-        # Keep connection alive and send periodic updates
-        while True:
-            await asyncio.sleep(5)  # Update every 5 seconds
-            
-            metrics = await get_live_metrics()
-            await websocket.send_json({
-                "type": "metrics",
-                "data": metrics
-            })
-            
-            # Also send recent logs and alerts
-            recent_logs = await get_recent_logs(limit=5)
-            recent_alerts = await get_recent_alerts(limit=5)
-            
-            await websocket.send_json({
-                "type": "recent_activity",
-                "data": {
-                    "logs": recent_logs,
-                    "alerts": recent_alerts
-                }
-            })
-            
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
-    except Exception as e:
-        print(f"WebSocket error: {e}")
-        manager.disconnect(websocket)
+        flow_data = raw.get("flow", {})
+        bytes_total = flow_data.get("bytes_toserver", 0) + flow_data.get("bytes_toclient", 0)
+        
+        stats["protocols"][proto] = stats["protocols"].get(proto, 0) + 1
+        
+        if src_ip not in stats["top_ips"]:
+            stats["top_ips"][src_ip] = 0
+        stats["top_ips"][src_ip] += bytes_total
+        
+        stats["total_bytes"] += bytes_total
 
+    formatted_protocols = [{"name": k, "value": v} for k, v in stats["protocols"].items()]
+    
+    # Sort IPs by bandwidth and get the top 5
+    top_5_ips = sorted(stats["top_ips"].items(), key=lambda x: x[1], reverse=True)[:5]
+    
+    # --- NEW: Inject the GeoIP Translation here ---
+    formatted_locations = [
+        {
+            "ip": ip, 
+            "bytes": bytes_transferred, 
+            "country": get_country_from_ip(ip) # <--- Translates the IP
+        } 
+        for ip, bytes_transferred in top_5_ips
+    ]
 
-async def broadcast_new_log(log_data: dict):
-    """Broadcast new log to all connected WebSocket clients."""
-    await manager.broadcast({
-        "type": "new_log",
-        "data": log_data
-    })
-
-
-async def broadcast_new_alert(alert_data: dict):
-    """Broadcast new alert to all connected WebSocket clients."""
-    await manager.broadcast({
-        "type": "new_alert",
-        "data": alert_data
-    })
-
+    return {
+        "protocols": formatted_protocols,
+        "top_locations": formatted_locations,
+        "total_bandwidth_mb": round(stats["total_bytes"] / (1024 * 1024), 2)
+    }

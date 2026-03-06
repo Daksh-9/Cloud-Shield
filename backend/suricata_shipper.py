@@ -1,117 +1,90 @@
+import os
 import time
 import json
+import logging
 import requests
-import os
-import tailer
-import sys
+from requests.exceptions import ConnectionError
 
-# --- CONFIGURATION ---
-# 1. Path to Suricata Logs
-EVE_JSON_PATH = r"C:\Program Files\Suricata\log\eve.json"
+# --- Configuration ---
+# Update this path to exactly where Suricata generates its eve.json on your Windows machine
+EVE_JSON_PATH = r"C:\Program Files\Suricata\log\eve.json" 
 
-# 2. Your API URL
-BASE_URL = "http://localhost:8000"
+# The endpoint in your FastAPI backend that receives the logs
+API_ENDPOINT = "http://localhost:8000/api/suricata/events"
 
-# 3. EXISTING Admin Credentials
-# (These must match the user currently saved in your MongoDB)
-ADMIN_EMAIL = "admin@gmail.com"
-ADMIN_PASSWORD = "Admin*123" 
+# Set up basic logging so we can see what the shipper is doing
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S"
+)
 
-# --- END CONFIGURATION ---
+def follow_file(file_path):
+    """
+    Generator function that yields new lines in a file as they are written.
+    It acts exactly like the Linux `tail -f` command.
+    """
+    # Wait until the file actually exists (in case Suricata hasn't created it yet)
+    while not os.path.exists(file_path):
+        logging.warning(f"File {file_path} not found. Waiting 5 seconds...")
+        time.sleep(5)
 
-API_BATCH_URL = f"{BASE_URL}/suricata/events/batch"
-LOGIN_URL = f"{BASE_URL}/auth/login"
-BATCH_SIZE = 10
-AUTH_TOKEN = None
+    with open(file_path, "r", encoding="utf-8") as file:
+        # Go to the very end of the file. We only want NEW logs, not historical ones.
+        file.seek(0, os.SEEK_END)
+        logging.info(f"Successfully connected to {file_path}. Waiting for new traffic...")
 
-def login():
-    """Authenticates using the credentials provided above."""
-    global AUTH_TOKEN
-    print(f"[*] Authenticating as: {ADMIN_EMAIL}...")
-    
-    try:
-        response = requests.post(LOGIN_URL, json={
-            "email": ADMIN_EMAIL,
-            "password": ADMIN_PASSWORD
-        })
-        
-        if response.status_code == 200:
-            data = response.json()
-            AUTH_TOKEN = data.get("access_token")
-            print("[+] Login successful. Token acquired.")
-            return True
-        elif response.status_code == 401:
-            print(f"[!] Authentication Failed: Incorrect Email or Password.")
-            print(f"    Please edit 'suricata_shipper.py' and update ADMIN_EMAIL/ADMIN_PASSWORD")
-            print(f"    to match the user in your MongoDB.")
-            return False
-        else:
-            print(f"[!] Login failed: {response.status_code} - {response.text}")
-            return False
-            
-    except requests.exceptions.ConnectionError:
-        print(f"[!] Could not connect to Backend at {BASE_URL}. Is it running?")
-        return False
-    except Exception as e:
-        print(f"[!] Login error: {e}")
-        return False
-
-def process_logs():
-    print(f"[*] Starting Log Shipper...")
-    print(f"[*] Monitoring: {EVE_JSON_PATH}")
-    
-    # 1. Perform Initial Login
-    if not login():
-        print("[!] Exiting due to authentication failure.")
-        return
-
-    # 2. Check File Access
-    if not os.path.exists(EVE_JSON_PATH):
-        print(f"[!] Error: File not found at {EVE_JSON_PATH}")
-        return
-
-    batch = []
-    
-    try:
-        # 3. Tail the file
-        for line in tailer.follow(open(EVE_JSON_PATH, encoding='utf-8')):
-            try:
-                event = json.loads(line)
-                batch.append(event)
-                
-                if len(batch) >= BATCH_SIZE:
-                    send_batch(batch)
-                    batch = []
-                    
-            except json.JSONDecodeError:
+        while True:
+            line = file.readline()
+            if not line:
+                # No new data, sleep for 0.1 seconds to prevent high CPU usage
+                time.sleep(0.1)
                 continue
-    except KeyboardInterrupt:
-        print("\n[*] Stopping Log Shipper.")
-    except Exception as e:
-        print(f"[!] Critical Error: {e}")
+            yield line
 
-def send_batch(events):
-    global AUTH_TOKEN
+def start_shipper():
+    """Reads lines from eve.json and POSTs them to the backend."""
+    logging.info("Starting Cloud Shield Suricata Shipper...")
+    logging.info(f"Target API: {API_ENDPOINT}")
     
-    headers = {"Authorization": f"Bearer {AUTH_TOKEN}"}
+    # Create a session object to reuse the TCP connection for speed
+    session = requests.Session()
     
-    try:
-        response = requests.post(API_BATCH_URL, json=events, headers=headers)
-        
-        if response.status_code == 201:
-            print(f"[+] Synced {len(events)} events.")
+    for raw_line in follow_file(EVE_JSON_PATH):
+        try:
+            # 1. Parse the raw string into a Python dictionary
+            eve_event = json.loads(raw_line.strip())
             
-        elif response.status_code == 401:
-            print("[!] Token expired. Re-authenticating...")
-            if login():
-                # Retry with new token
-                headers["Authorization"] = f"Bearer {AUTH_TOKEN}"
-                requests.post(API_BATCH_URL, json=events, headers=headers)
-        else:
-            print(f"[!] API Error {response.status_code}: {response.text}")
+            # Optional: Filter out noisy event types here if you only want alerts and flows
+            # if eve_event.get("event_type") not in ["alert", "flow", "dns"]:
+            #     continue
+                
+            # 2. Send the JSON payload to your FastAPI backend
+            response = session.post(API_ENDPOINT, json=eve_event)
             
-    except Exception as e:
-        print(f"[!] Error sending batch: {e}")
+            # 3. Handle the response
+            if response.status_code in [200, 201]:
+                event_type = eve_event.get("event_type", "unknown").upper()
+                
+                # If it's an alert, print it in red/warning for visibility
+                if event_type == "ALERT":
+                    alert_msg = eve_event.get('alert', {}).get('signature', 'Unknown Alert')
+                    logging.warning(f"🚨 ALERT SHIPPED: {alert_msg}")
+                else:
+                    logging.info(f"Shipped event: {event_type}")
+            else:
+                logging.error(f"Backend rejected payload. Status Code: {response.status_code}")
+                
+        except json.JSONDecodeError:
+            logging.error("Failed to parse line as JSON. Skipping.")
+        except ConnectionError:
+            logging.error("Cannot connect to FastAPI backend. Is it running? Retrying in 2s...")
+            time.sleep(2)
+        except Exception as e:
+            logging.error(f"Unexpected error: {str(e)}")
 
 if __name__ == "__main__":
-    process_logs()
+    try:
+        start_shipper()
+    except KeyboardInterrupt:
+        logging.info("Shipper stopped by user.")

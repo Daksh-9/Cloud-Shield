@@ -1,15 +1,16 @@
 import asyncio
-import platform
 import os
+import subprocess
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from bson import ObjectId
 
 from app.database.connection import get_database
 from app.services.log_service import create_log
-from app.config import settings  # Import settings for paths
+from app.config import settings
 
-# --- Existing Event Parsing Functions (Unchanged) ---
+# --- Event Parsing Functions ---
+
 async def parse_and_store_suricata_event(eve_json: Dict[str, Any]) -> dict:
     """Parse Suricata EVE JSON event and store in MongoDB."""
     db = get_database()
@@ -72,7 +73,8 @@ async def get_suricata_events(limit: int = 100, skip: int = 0, event_type: Optio
     events = await cursor.to_list(length=limit)
     return [{"id": str(e["_id"]), **e} for e in events]
 
-# --- Rule Management Functions (Unchanged) ---
+# --- Rule Management Functions ---
+
 async def create_suricata_rule(name: str, rule_content: str, description: Optional[str] = None, enabled: bool = True) -> dict:
     db = get_database()
     rule_doc = {
@@ -105,7 +107,8 @@ async def delete_suricata_rule(rule_id: str) -> bool:
     result = await db.suricata_rules.delete_one({"_id": ObjectId(rule_id)})
     return result.deleted_count > 0
 
-# --- Config Management (Unchanged) ---
+# --- Config Management ---
+
 async def create_suricata_config(config_name: str, config_content: str, description: Optional[str] = None) -> dict:
     db = get_database()
     doc = {"config_name": config_name, "config_content": config_content, "description": description, "created_at": datetime.utcnow(), "updated_at": datetime.utcnow()}
@@ -118,7 +121,8 @@ async def get_suricata_configs() -> List[dict]:
     configs = await cursor.to_list(length=None)
     return [{"id": str(c["_id"]), **c} for c in configs]
 
-# --- NEW: Real World Windows Integration Functions ---
+
+# --- Real World Integration Functions ---
 
 async def sync_rules_to_disk() -> bool:
     """
@@ -128,7 +132,6 @@ async def sync_rules_to_disk() -> bool:
     try:
         rules = await get_suricata_rules(enabled_only=True)
         
-        # Format rules for the file
         rule_lines = [
             f"# Rule: {rule['name']} (ID: {rule['id']})\n{rule['rule_content']}\n"
             for rule in rules
@@ -139,8 +142,6 @@ async def sync_rules_to_disk() -> bool:
             "# DO NOT EDIT MANUALLY - Changes will be overwritten\n\n"
         ) + "\n".join(rule_lines)
 
-        # Write to disk
-        # Ensure directory exists
         os.makedirs(os.path.dirname(settings.SURICATA_RULES_PATH), exist_ok=True)
         
         with open(settings.SURICATA_RULES_PATH, 'w', encoding='utf-8') as f:
@@ -164,70 +165,117 @@ async def sync_rules_to_disk() -> bool:
         )
         return False
 
-async def reload_suricata() -> dict:
-    """
-    Reloads Suricata on Native Windows.
-    1. Syncs rules from DB to local.rules file.
-    2. Restarts the Suricata Windows Service.
-    """
-    # 1. Sync Rules
-    synced = await sync_rules_to_disk()
-    if not synced:
-        return {
-            "status": "error",
-            "message": "Failed to sync rules to disk. Aborting reload."
-        }
 
-    # 2. Check Platform
-    if platform.system() != "Windows":
-        return {
-            "status": "error",
-            "message": "Server is not running on Windows. Cannot restart service."
-        }
+# --- NEW: Process Management Variables & Functions ---
+_suricata_process: Optional[subprocess.Popen] = None
 
-    # 3. Restart Service
-    # Using PowerShell to restart the service. Requires Admin Privileges.
-    service_name = settings.SURICATA_SERVICE_NAME
-    command = f'powershell -Command "Restart-Service -Name \'{service_name}\' -Force"'
+async def start_suricata_subprocess() -> bool:
+    """Spawns Suricata as a child process of the backend using robust Popen."""
+    global _suricata_process
+    
+    print("\n--- [SYSTEM] Attempting to start Suricata Subprocess ---")
+    
+    # Always sync rules to disk before starting
+    await sync_rules_to_disk()
+    print(f"--- [SYSTEM] Rules synced to {settings.SURICATA_RULES_PATH} ---")
+
+    # If it's already running, don't start a new one (poll() returns None if running)
+    if _suricata_process and _suricata_process.poll() is None:
+        print("--- [SYSTEM] Suricata is already running! ---")
+        return True 
+
+    # We wrap the paths in double quotes so Windows doesn't get confused by spaces
+    shell_cmd = f'"{settings.SURICATA_EXEC_PATH}" -c "{settings.SURICATA_CONFIG_PATH}" -i "{settings.SURICATA_INTERFACE}"'
+    print(f"--- [SYSTEM] Executing Command: {shell_cmd} ---")
     
     try:
-        process = await asyncio.create_subprocess_shell(
-            command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+        # Use synchronous Popen to completely bypass the Windows asyncio bug.
+        # We send output to DEVNULL so Windows doesn't freeze the process if the print buffer fills up.
+        _suricata_process = subprocess.Popen(
+            shell_cmd,
+            shell=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
         )
         
-        stdout, stderr = await process.communicate()
-        output = stdout.decode().strip()
-        error = stderr.decode().strip()
+        success_msg = f"Suricata started successfully as subprocess (PID: {_suricata_process.pid})"
+        print(f"\n✅ {success_msg}\n")
         
-        if process.returncode == 0:
+        await create_log(
+            source="suricata", log_type="system", severity="info",
+            message=success_msg
+        )
+        return True
+    except Exception as e:
+        import traceback
+        error_msg = f"Failed to start Suricata subprocess: {repr(e)}"
+        print(f"\n❌ [ERROR] {error_msg}")
+        traceback.print_exc()
+        print("\n")
+        
+        await create_log(
+            source="suricata", log_type="error", severity="error",
+            message=error_msg
+        )
+        return False
+
+async def stop_suricata_subprocess():
+    """Gracefully terminates the Suricata child process."""
+    global _suricata_process
+    
+    if _suricata_process and _suricata_process.poll() is None:
+        print("\n--- [SYSTEM] Attempting to stop Suricata Subprocess ---")
+        try:
+            _suricata_process.terminate()
+            # Wait up to 5 seconds for a graceful shutdown
+            _suricata_process.wait(timeout=5.0)
+            print("✅ [SYSTEM] Suricata subprocess terminated gracefully.\n")
+            
             await create_log(
-                source="suricata",
-                log_type="reload",
-                severity="info",
-                message="Suricata service restarted successfully",
-                metadata={"action": "service_restart"}
+                source="suricata", log_type="system", severity="info",
+                message="Suricata subprocess terminated gracefully."
             )
+        except subprocess.TimeoutExpired:
+            # Force kill if it hangs
+            _suricata_process.kill()
+            _suricata_process.wait()
+            print("⚠️ [SYSTEM] Suricata subprocess was force killed.\n")
+            
+            await create_log(
+                source="suricata", log_type="system", severity="warning",
+                message="Suricata subprocess was force killed."
+            )
+        finally:
+            _suricata_process = None
+
+async def reload_suricata() -> dict:
+    """
+    Reloads Suricata by killing the current subprocess and starting a new one.
+    """
+    print("\n--- [SYSTEM] Reloading Suricata Subprocess ---")
+    synced = await sync_rules_to_disk()
+    if not synced:
+        return {"status": "error", "message": "Failed to sync rules. Aborting reload."}
+
+    try:
+        # Stop the existing process
+        await stop_suricata_subprocess()
+        
+        # Start a fresh process
+        started = await start_suricata_subprocess()
+        
+        if started:
             return {
                 "status": "success",
-                "message": "Suricata service restarted and rules applied.",
+                "message": "Suricata subprocess restarted and new rules applied.",
                 "timestamp": datetime.utcnow().isoformat()
             }
         else:
-            await create_log(
-                source="suricata",
-                log_type="reload",
-                severity="error",
-                message="Failed to restart Suricata service",
-                metadata={"error": error, "command": command}
-            )
             return {
                 "status": "error",
-                "message": f"Service restart failed: {error}",
+                "message": "Failed to restart Suricata subprocess.",
                 "timestamp": datetime.utcnow().isoformat()
             }
-
     except Exception as e:
         return {
             "status": "error",

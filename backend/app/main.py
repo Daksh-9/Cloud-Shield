@@ -2,13 +2,26 @@
 Cloud Shield - Main FastAPI Application
 Entry point for the backend API server.
 """
+import sys
+import asyncio
+
+# --- WINDOWS ASYNCIO BUG FIX (MUST BE AT THE VERY TOP) ---
+# Forces the Uvicorn worker process to use the correct Windows event loop 
+# that supports background subprocesses.
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database.connection import connect_to_mongo, close_mongo_connection
-from app.routers import auth, logs, alerts, monitoring, suricata, suricata_rules, ml, user
+
+# IMPORT THE NEW SUBPROCESS FUNCTIONS
+from app.services.suricata_service import start_suricata_subprocess, stop_suricata_subprocess
 from app.utils.ml_model_loader import initialize_models
+
+from app.routers import auth, logs, alerts, monitoring, suricata, suricata_rules, ml, user
 
 app = FastAPI(
     title="Cloud Shield API",
@@ -28,15 +41,21 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database connections on startup."""
+    """Initialize database connections and processes on startup."""
     await connect_to_mongo()
     # Initialize ML models
     initialize_models()
+    
+    # START SURICATA SUBPROCESS
+    await start_suricata_subprocess()
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Close database connections on shutdown."""
+    """Close connections and clean up processes on shutdown."""
+    # STOP SURICATA SUBPROCESS FIRST
+    await stop_suricata_subprocess()
+    
     await close_mongo_connection()
 
 
@@ -68,4 +87,3 @@ app.include_router(suricata.router)
 app.include_router(suricata_rules.router)
 app.include_router(ml.router)
 app.include_router(user.router)
-
