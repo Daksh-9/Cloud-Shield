@@ -15,12 +15,11 @@ import MLFeatureExtraction from './pages/MLFeatureExtraction'
 import Settings from './pages/Settings'
 import UserProfile from './pages/UserProfile'
 import Notifications from './pages/Notifications'
-import ManageAnalysts from './pages/ManageAnalysts' // <-- ADD THIS IMPORT
+import ManageAnalysts from './pages/ManageAnalysts'
 
 // --- SURICATA PAGES ---
 import SuricataRules from './pages/SuricataRules'
 import SuricataUpload from './pages/SuricataUpload'
-import SuricataConfig from './pages/SuricataConfig'
 import SuricataLogs from './pages/SuricataLogs'
 
 function App() {
@@ -51,14 +50,14 @@ function App() {
         <Route path="/suricata" element={<Navigate to="/suricata/rules" replace />} />
         <Route path="/suricata/rules" element={<SuricataRules />} />
         <Route path="/suricata/upload" element={<SuricataUpload />} />
-        <Route path="/suricata/config" element={<SuricataConfig />} />
         <Route path="/suricata/logs" element={<SuricataLogs />} />
+        {/* REMOVED: /suricata/config as it is now in SuricataRules */}
         
         {/* System & Admin Routes */}
         <Route path="/settings" element={<Settings />} />
         <Route path="/profile" element={<UserProfile />} />
         <Route path="/notifications" element={<Notifications />} />
-        <Route path="/admin/users" element={<ManageAnalysts />} /> {/* <-- ADD THIS ROUTE */}
+        <Route path="/admin/users" element={<ManageAnalysts />} />
       </Route>
       
       {/* Fallback */}

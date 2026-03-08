@@ -21,8 +21,6 @@ export default function LiveTraffic() {
   });
   
   const [loading, setLoading] = useState(true);
-  
-  // NEW: Reactive Map Tooltip State
   const [mapTooltip, setMapTooltip] = useState({ show: false, content: "", x: 0, y: 0 });
 
   const fetchTrafficData = async () => {
@@ -37,6 +35,7 @@ export default function LiveTraffic() {
             ? Math.floor(data.total_bandwidth_mb * 1024 * 1024) 
             : 1; 
 
+          // Prevent duplicate timeline bumps if websocket just fired
           const newTimeline = [...prev.timeline.slice(1), { time: newTime, size: newSize }];
 
           return {
@@ -60,14 +59,16 @@ export default function LiveTraffic() {
     return () => clearInterval(interval);
   }, []);
 
-  // WebSocket: use log updates to slightly bump the live timeline,
-  // giving an immediate visual response between HTTP polling intervals.
+  // INSTANT LIVE UPDATES: Triggered by the Python backend via WebSocket
   useSocket((event) => {
     if (!event || event.type !== 'LOG_UPDATE' || !event.payload) return;
 
+    // 1. Immediately fetch the fresh GeoIP data to color the map instantly
+    fetchTrafficData();
+
+    // 2. Bump the timeline visualizer
     setStats((prev) => {
       const newTime = new Date().toLocaleTimeString();
-      // Use a small synthetic "size" bump to indicate live traffic.
       const newSize = Math.max(1, prev.timeline[prev.timeline.length - 1]?.size || 1);
       const newTimeline = [...prev.timeline.slice(1), { time: newTime, size: newSize }];
 
@@ -96,6 +97,7 @@ export default function LiveTraffic() {
 
   const currentPieColors = isIdle ? IDLE_COLOR : COLORS;
 
+  // Aggregate country bytes for the heatmap calculation
   const countryData = {};
   if (!isIdle) {
     displayLocations.forEach(loc => {
@@ -105,10 +107,13 @@ export default function LiveTraffic() {
     });
   }
 
+  // Find the absolute highest traffic country to set the 100% threshold for our heatmap colors
+  const maxTrafficBytes = Object.values(countryData).length > 0 ? Math.max(...Object.values(countryData)) : 1;
+
   return (
     <div style={{ padding: '1.5rem', fontFamily: 'system-ui, sans-serif', position: 'relative' }}>
       
-      {/* NEW: Floating Tooltip for the Map */}
+      {/* Tooltip for hovering over countries */}
       {mapTooltip.show && (
         <div style={{
           position: 'fixed',
@@ -134,14 +139,14 @@ export default function LiveTraffic() {
           <Activity size={24} color="#3b82f6" />
           <div>
             <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>Total Monitored Bandwidth</p>
-            <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold' }}>{isIdle ? 1 : stats.totalBandwidth} MB</h3>
+            <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold' }}>{isIdle ? 0 : stats.totalBandwidth} MB</h3>
           </div>
         </div>
         <div style={{ padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '1rem', backgroundColor: '#f8fafc' }}>
           <FileDigit size={24} color="#10b981" />
           <div>
             <p style={{ margin: 0, fontSize: '0.875rem', color: '#64748b' }}>Active Protocols</p>
-            <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold' }}>{isIdle ? 1 : stats.protocols.length} Detected</h3>
+            <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold' }}>{isIdle ? 0 : stats.protocols.length} Detected</h3>
           </div>
         </div>
         <div style={{ padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', gap: '1rem', backgroundColor: '#f8fafc' }}>
@@ -155,13 +160,24 @@ export default function LiveTraffic() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
         
-        {/* Geographic Threat Map */}
+        {/* Geographic Threat Map with Heatmap Colors */}
         <div style={{ padding: '1.5rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', backgroundColor: '#ffffff', gridColumn: '1 / -1' }}>
-          <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
-            <MapIcon size={20} style={{ marginRight: '0.5rem' }}/> Global Traffic Origins
-          </h3>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', margin: 0, display: 'flex', alignItems: 'center' }}>
+              <MapIcon size={20} style={{ marginRight: '0.5rem' }}/> Global Traffic Origins
+            </h3>
+            
+            {/* COLOR LEGEND */}
+            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: '#64748b', fontWeight: '500' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><div style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: '#ef4444' }}/> High Volume</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><div style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: '#f59e0b' }}/> Medium Volume</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><div style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: '#3b82f6' }}/> Low Volume</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><div style={{ width: 12, height: 12, borderRadius: 2, backgroundColor: '#e2e8f0' }}/> No Traffic</span>
+            </div>
+          </div>
+
           <div style={{ width: '100%', backgroundColor: '#f8fafc', borderRadius: '0.5rem', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-            {/* FORCE WIDESCREEN ASPECT RATIO (1000x400) */}
             <ComposableMap projectionConfig={{ scale: 140 }} width={1000} height={400} style={{ width: "100%", height: "auto", display: "block" }}>
               <Geographies geography={geoUrl}>
                 {({ geographies }) =>
@@ -172,9 +188,17 @@ export default function LiveTraffic() {
                     const trafficBytes = countryData[searchName] || 0;
                     const hasTraffic = trafficBytes > 0;
                     
-                    let fillCol = "#e2e8f0"; 
-                    if (isIdle) fillCol = "#cbd5e1"; 
-                    else if (hasTraffic) fillCol = "#3b82f6"; 
+                    // DYNAMIC COLOR CODING LOGIC
+                    let fillCol = "#e2e8f0"; // Default light gray for no traffic
+                    
+                    if (isIdle) {
+                      fillCol = "#cbd5e1"; // Slightly darker gray when system is completely idle
+                    } else if (hasTraffic) {
+                      const ratio = trafficBytes / maxTrafficBytes;
+                      if (ratio > 0.6) fillCol = "#ef4444";      // RED (Top 40% of traffic)
+                      else if (ratio > 0.2) fillCol = "#f59e0b"; // ORANGE (Middle tier traffic)
+                      else fillCol = "#3b82f6";                  // BLUE (Bottom 20% of traffic)
+                    }
 
                     return (
                       <Geography
@@ -183,11 +207,10 @@ export default function LiveTraffic() {
                         fill={fillCol}
                         stroke="#ffffff"
                         strokeWidth={0.5}
-                        // REACTIVE HOVER EVENTS
                         onMouseEnter={(e) => {
                           setMapTooltip({ 
                             show: true, 
-                            content: `${geoName}: ${isIdle ? "0" : trafficBytes} Bytes`, 
+                            content: `${geoName}: ${isIdle ? "0" : (trafficBytes / 1024 / 1024).toFixed(2)} MB`, 
                             x: e.clientX, 
                             y: e.clientY 
                           });
@@ -199,8 +222,9 @@ export default function LiveTraffic() {
                           setMapTooltip({ show: false, content: "", x: 0, y: 0 });
                         }}
                         style={{
-                          default: { outline: "none", transition: "all 250ms" },
-                          hover: { fill: isIdle ? "#94a3b8" : (hasTraffic ? "#1d4ed8" : "#94a3b8"), outline: "none", cursor: "crosshair" },
+                          // Smooth transition makes the color pop nicely when updated
+                          default: { outline: "none", transition: "fill 400ms ease-in-out" },
+                          hover: { fill: isIdle ? "#94a3b8" : (hasTraffic ? "#991b1b" : "#94a3b8"), outline: "none", cursor: "crosshair", transition: "fill 100ms" },
                           pressed: { outline: "none" },
                         }}
                       />
@@ -227,8 +251,8 @@ export default function LiveTraffic() {
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                 <XAxis type="number" domain={[0, isIdle ? 2 : 'auto']} />
                 <YAxis dataKey="ip" type="category" width={100} />
-                {!isIdle && <RechartsTooltip />}
-                <Bar dataKey="bytes" fill={isIdle ? "#cbd5e1" : "#3b82f6"} radius={[0, 4, 4, 0]} name="Bytes Transferred">
+                {!isIdle && <RechartsTooltip formatter={(value) => `${(value / 1024 / 1024).toFixed(2)} MB`} />}
+                <Bar dataKey="bytes" fill={isIdle ? "#cbd5e1" : "#3b82f6"} radius={[0, 4, 4, 0]} name="Data Transferred">
                   {!isIdle && displayLocations.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}

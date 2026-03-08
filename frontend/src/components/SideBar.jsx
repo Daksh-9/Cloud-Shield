@@ -15,9 +15,8 @@ function Sidebar({ user, onLogout, isOpen }) {
     { path: '/suricata', label: 'Suricata Rules', icon: '🛡️' },
   ]
 
-  // --- NEW: Admin Only Items ---
+  // --- Admin Only Items ---
   if (isAdmin) {
-    menuItems.push({ path: '/suricata/config', label: 'System Config', icon: '⚙️' });
     menuItems.push({ path: '/admin/users', label: 'Manage Analysts', icon: '👥' });
   }
 
@@ -48,11 +47,11 @@ function Sidebar({ user, onLogout, isOpen }) {
               display: 'flex',
               alignItems: 'center',
               padding: '0.75rem 1.5rem',
-              color: location.pathname === item.path ? 'var(--sidebar-text)' : '#aaa',
-              backgroundColor: location.pathname === item.path ? '#2196F3' : 'transparent',
+              color: location.pathname.startsWith(item.path) ? 'var(--sidebar-text)' : '#aaa',
+              backgroundColor: location.pathname.startsWith(item.path) ? '#2196F3' : 'transparent',
               textDecoration: 'none',
               transition: 'background-color 0.2s',
-              borderLeft: location.pathname === item.path ? '4px solid white' : '4px solid transparent',
+              borderLeft: location.pathname.startsWith(item.path) ? '4px solid white' : '4px solid transparent',
               whiteSpace: 'nowrap'
             }}
           >

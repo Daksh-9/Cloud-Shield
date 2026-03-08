@@ -4,7 +4,6 @@
 import api from './auth'
 
 export const suricataService = {
-  // ... (Existing methods: ingestEvent, ingestEventsBatch, getEvents) ...
 
   async getEvents(filters = {}) {
     const params = new URLSearchParams()
@@ -16,14 +15,13 @@ export const suricataService = {
     return response.data
   },
 
-  // --- UPDATED: Rule Management ---
+  // --- Rule Management ---
 
   async createRule(ruleContent, ruleName, severity = 'medium') {
-    // UPDATED: Now accepts severity
     const response = await api.post('/suricata/rules/create', {
       rule_content: ruleContent,
       rule_name: ruleName || undefined,
-      severity: severity // --- NEW ---
+      severity: severity 
     })
     return response.data
   },
@@ -40,12 +38,11 @@ export const suricataService = {
     return response.data
   },
 
-  // --- NEW: Upload & Backup ---
+  // --- Upload & Backup ---
 
   async uploadRules(file, uploadedBy) {
     const formData = new FormData();
     formData.append('file', file);
-    // User ID is handled by token, but we can log context if needed
     
     const response = await api.post('/suricata/rules/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
@@ -63,7 +60,7 @@ export const suricataService = {
     return response.data;
   },
 
-  // --- Existing File View ---
+  // --- File View ---
 
   async viewRulesFile(search, caseSensitive = false) {
     const params = new URLSearchParams()
@@ -80,6 +77,17 @@ export const suricataService = {
     })
     return response.data
   },
+
+  // --- History ---
+  async getRuleHistory(limit = 50) {
+    const response = await api.get(`/suricata/rules/history?limit=${limit}`);
+    return response.data;
+  },
+
+  // --- Engine Management ---
   
-  // ... (Existing Config methods) ...
+  async reloadEngine() {
+    const response = await api.post('/suricata/reload');
+    return response.data;
+  }
 }

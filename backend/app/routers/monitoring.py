@@ -22,6 +22,21 @@ else:
 
 def get_country_from_ip(ip_address: str) -> str:
     """Safely converts an IP to a Country Name."""
+    
+    # --- SIMULATOR CHEAT CODE FOR LIVE TRAFFIC TESTING ---
+    simulator_ips = {
+        "8.8.8.8": "United States",
+        "1.1.1.1": "Australia",
+        "210.212.239.122": "India",
+        "82.165.8.211": "Germany",
+        "114.114.114.114": "China",
+        "177.43.255.255": "Brazil"
+    }
+    
+    if ip_address in simulator_ips:
+        return simulator_ips[ip_address]
+    # -----------------------------------------------------
+    
     if not geoip_reader:
         return "Unknown (DB Missing)"
         
@@ -58,6 +73,7 @@ async def get_live_traffic_stats():
     }
     
     for doc in recent_flows:
+        # We extract from raw_event because the DB wraps the flat payload
         raw = doc.get("raw_event", {})
         proto = raw.get("proto", "UNKNOWN")
         src_ip = raw.get("src_ip", "Unknown")
@@ -78,12 +94,12 @@ async def get_live_traffic_stats():
     # Sort IPs by bandwidth and get the top 5
     top_5_ips = sorted(stats["top_ips"].items(), key=lambda x: x[1], reverse=True)[:5]
     
-    # --- NEW: Inject the GeoIP Translation here ---
+    # Inject the GeoIP Translation
     formatted_locations = [
         {
             "ip": ip, 
             "bytes": bytes_transferred, 
-            "country": get_country_from_ip(ip) # <--- Translates the IP
+            "country": get_country_from_ip(ip) 
         } 
         for ip, bytes_transferred in top_5_ips
     ]
