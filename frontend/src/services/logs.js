@@ -47,5 +47,17 @@ export const logsService = {
     const response = await api.get(`/logs/stats/count?${params.toString()}`)
     return response.data
   },
-}
 
+  /**
+   * Get Suricata Traffic/EVE Events
+   */
+  async getSuricataEvents(filters = {}) {
+    const params = new URLSearchParams()
+    if (filters.limit) params.append('limit', filters.limit)
+    if (filters.skip) params.append('skip', filters.skip)
+    if (filters.event_type) params.append('event_type', filters.event_type)
+
+    const response = await api.get(`/suricata/events?${params.toString()}`)
+    return response.data
+  }
+}

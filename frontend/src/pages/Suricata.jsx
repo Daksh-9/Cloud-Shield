@@ -113,14 +113,14 @@ function Suricata() {
   }
 
   return (
-    <div>
+    <div style={{ color: 'var(--text-primary)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1 style={{ margin: 0, color: '#1a1a1a' }}>Suricata Management</h1>
+        <h1 style={{ margin: 0 }}>Suricata Management</h1>
         <button
           onClick={handleReload}
           style={{
             padding: '0.75rem 1.5rem',
-            backgroundColor: '#2196F3',
+            backgroundColor: 'var(--accent-color)',
             color: '#fff',
             border: 'none',
             borderRadius: '4px',
@@ -134,15 +134,15 @@ function Suricata() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '2px solid #ddd' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '2px solid var(--border-color)' }}>
         <button
           onClick={() => setActiveTab('events')}
           style={{
             padding: '0.75rem 1.5rem',
-            backgroundColor: activeTab === 'events' ? '#2196F3' : 'transparent',
-            color: activeTab === 'events' ? '#fff' : '#666',
+            backgroundColor: activeTab === 'events' ? 'var(--accent-color)' : 'transparent',
+            color: activeTab === 'events' ? '#fff' : 'var(--text-secondary)',
             border: 'none',
-            borderBottom: activeTab === 'events' ? '2px solid #2196F3' : 'none',
+            borderBottom: activeTab === 'events' ? '2px solid var(--accent-color)' : 'none',
             cursor: 'pointer',
             fontSize: '1rem',
             marginBottom: '-2px'
@@ -154,10 +154,10 @@ function Suricata() {
           onClick={() => setActiveTab('rules')}
           style={{
             padding: '0.75rem 1.5rem',
-            backgroundColor: activeTab === 'rules' ? '#2196F3' : 'transparent',
-            color: activeTab === 'rules' ? '#fff' : '#666',
+            backgroundColor: activeTab === 'rules' ? 'var(--accent-color)' : 'transparent',
+            color: activeTab === 'rules' ? '#fff' : 'var(--text-secondary)',
             border: 'none',
-            borderBottom: activeTab === 'rules' ? '2px solid #2196F3' : 'none',
+            borderBottom: activeTab === 'rules' ? '2px solid var(--accent-color)' : 'none',
             cursor: 'pointer',
             fontSize: '1rem',
             marginBottom: '-2px'
@@ -169,10 +169,10 @@ function Suricata() {
           onClick={() => setActiveTab('configs')}
           style={{
             padding: '0.75rem 1.5rem',
-            backgroundColor: activeTab === 'configs' ? '#2196F3' : 'transparent',
-            color: activeTab === 'configs' ? '#fff' : '#666',
+            backgroundColor: activeTab === 'configs' ? 'var(--accent-color)' : 'transparent',
+            color: activeTab === 'configs' ? '#fff' : 'var(--text-secondary)',
             border: 'none',
-            borderBottom: activeTab === 'configs' ? '2px solid #2196F3' : 'none',
+            borderBottom: activeTab === 'configs' ? '2px solid var(--accent-color)' : 'none',
             cursor: 'pointer',
             fontSize: '1rem',
             marginBottom: '-2px'
@@ -184,69 +184,35 @@ function Suricata() {
 
       {/* Messages */}
       {error && (
-        <div style={{
-          padding: '1rem',
-          marginBottom: '1rem',
-          backgroundColor: '#fee',
-          color: '#c33',
-          borderRadius: '4px',
-          border: '1px solid #fcc'
-        }}>
+        <div style={{ padding: '1rem', marginBottom: '1rem', backgroundColor: 'rgba(244, 67, 54, 0.1)', color: '#F44336', borderRadius: '4px', border: '1px solid #F44336' }}>
           {error}
         </div>
       )}
 
       {success && (
-        <div style={{
-          padding: '1rem',
-          marginBottom: '1rem',
-          backgroundColor: '#efe',
-          color: '#3c3',
-          borderRadius: '4px',
-          border: '1px solid #cfc'
-        }}>
+        <div style={{ padding: '1rem', marginBottom: '1rem', backgroundColor: 'rgba(76, 175, 80, 0.1)', color: '#4CAF50', borderRadius: '4px', border: '1px solid #4CAF50' }}>
           {success}
         </div>
       )}
 
       {/* Events Tab */}
       {activeTab === 'events' && (
-        <div style={{
-          backgroundColor: '#fff',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <h2 style={{ marginBottom: '1rem', color: '#333' }}>Suricata Events ({events.length})</h2>
+        <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)' }}>
+          <h2 style={{ marginBottom: '1rem' }}>Suricata Events ({events.length})</h2>
           
           {loading ? (
-            <p>Loading events...</p>
+            <p style={{ color: 'var(--text-secondary)' }}>Loading events...</p>
           ) : events.length === 0 ? (
-            <p style={{ color: '#666' }}>No events found.</p>
+            <p style={{ color: 'var(--text-secondary)' }}>No events found.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {events.map((event) => (
-                <div
-                  key={event.id}
-                  style={{
-                    padding: '1rem',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    backgroundColor: '#f9f9f9'
-                  }}
-                >
+                <div key={event.id} style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                     <strong>{event.event_type}</strong>
-                    <span style={{ color: '#666', fontSize: '0.875rem' }}>{formatDate(event.timestamp)}</span>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{formatDate(event.timestamp)}</span>
                   </div>
-                  <pre style={{
-                    fontSize: '0.75rem',
-                    backgroundColor: '#fff',
-                    padding: '0.5rem',
-                    borderRadius: '4px',
-                    overflow: 'auto',
-                    maxHeight: '200px'
-                  }}>
+                  <pre style={{ fontSize: '0.75rem', backgroundColor: 'var(--bg-secondary)', padding: '0.5rem', borderRadius: '4px', overflow: 'auto', maxHeight: '200px', border: '1px solid var(--border-color)' }}>
                     {JSON.stringify(event.raw_event, null, 2)}
                   </pre>
                 </div>
@@ -260,42 +226,36 @@ function Suricata() {
       {activeTab === 'rules' && (
         <div>
           {/* Create Rule Form */}
-          <div style={{
-            backgroundColor: '#fff',
-            padding: '1.5rem',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            marginBottom: '2rem'
-          }}>
-            <h2 style={{ marginBottom: '1rem', color: '#333' }}>Create New Rule</h2>
+          <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)', marginBottom: '2rem' }}>
+            <h2 style={{ marginBottom: '1rem' }}>Create New Rule</h2>
             <form onSubmit={handleCreateRule}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>Rule Name</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem' }}>Rule Name</label>
                 <input
                   type="text"
                   value={newRule.name}
                   onChange={(e) => setNewRule({ ...newRule, name: e.target.value })}
                   required
-                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                 />
               </div>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>Rule Content</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem' }}>Rule Content</label>
                 <textarea
                   value={newRule.rule_content}
                   onChange={(e) => setNewRule({ ...newRule, rule_content: e.target.value })}
                   required
                   rows={5}
-                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px', fontFamily: 'monospace' }}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid var(--border-color)', borderRadius: '4px', fontFamily: 'monospace', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                 />
               </div>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>Description</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem' }}>Description</label>
                 <input
                   type="text"
                   value={newRule.description}
                   onChange={(e) => setNewRule({ ...newRule, description: e.target.value })}
-                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                 />
               </div>
               <div style={{ marginBottom: '1rem' }}>
@@ -308,101 +268,43 @@ function Suricata() {
                   <span>Enabled</span>
                 </label>
               </div>
-              <button
-                type="submit"
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  backgroundColor: '#2196F3',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
+              <button type="submit" style={{ padding: '0.75rem 1.5rem', backgroundColor: 'var(--accent-color)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
                 Create Rule
               </button>
             </form>
           </div>
 
           {/* Rules List */}
-          <div style={{
-            backgroundColor: '#fff',
-            padding: '1.5rem',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-          }}>
-            <h2 style={{ marginBottom: '1rem', color: '#333' }}>Suricata Rules ({rules.length})</h2>
+          <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)' }}>
+            <h2 style={{ marginBottom: '1rem' }}>Suricata Rules ({rules.length})</h2>
             
             {loading ? (
-              <p>Loading rules...</p>
+              <p style={{ color: 'var(--text-secondary)' }}>Loading rules...</p>
             ) : rules.length === 0 ? (
-              <p style={{ color: '#666' }}>No rules found.</p>
+              <p style={{ color: 'var(--text-secondary)' }}>No rules found.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {rules.map((rule) => (
-                  <div
-                    key={rule.id}
-                    style={{
-                      padding: '1rem',
-                      border: '1px solid #ddd',
-                      borderRadius: '4px',
-                      backgroundColor: '#f9f9f9'
-                    }}
-                  >
+                  <div key={rule.id} style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
                       <div>
                         <strong>{rule.name}</strong>
-                        {rule.description && <p style={{ margin: '0.25rem 0', color: '#666', fontSize: '0.875rem' }}>{rule.description}</p>}
+                        {rule.description && <p style={{ margin: '0.25rem 0', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{rule.description}</p>}
                       </div>
                       <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <span style={{
-                          padding: '0.25rem 0.5rem',
-                          backgroundColor: rule.enabled ? '#4CAF50' : '#9E9E9E',
-                          color: '#fff',
-                          borderRadius: '4px',
-                          fontSize: '0.75rem'
-                        }}>
+                        <span style={{ padding: '0.25rem 0.5rem', backgroundColor: rule.enabled ? '#4CAF50' : 'var(--text-secondary)', color: '#fff', borderRadius: '4px', fontSize: '0.75rem' }}>
                           {rule.enabled ? 'Enabled' : 'Disabled'}
                         </span>
                       </div>
                     </div>
-                    <pre style={{
-                      fontSize: '0.75rem',
-                      backgroundColor: '#fff',
-                      padding: '0.5rem',
-                      borderRadius: '4px',
-                      overflow: 'auto',
-                      marginBottom: '0.5rem'
-                    }}>
+                    <pre style={{ fontSize: '0.75rem', backgroundColor: 'var(--bg-secondary)', padding: '0.5rem', borderRadius: '4px', overflow: 'auto', marginBottom: '0.5rem', border: '1px solid var(--border-color)' }}>
                       {rule.rule_content}
                     </pre>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button
-                        onClick={() => handleToggleRule(rule.id, rule.enabled)}
-                        style={{
-                          padding: '0.5rem 1rem',
-                          backgroundColor: rule.enabled ? '#FF9800' : '#4CAF50',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '0.875rem'
-                        }}
-                      >
+                      <button onClick={() => handleToggleRule(rule.id, rule.enabled)} style={{ padding: '0.5rem 1rem', backgroundColor: rule.enabled ? '#FF9800' : '#4CAF50', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem' }}>
                         {rule.enabled ? 'Disable' : 'Enable'}
                       </button>
-                      <button
-                        onClick={() => handleDeleteRule(rule.id)}
-                        style={{
-                          padding: '0.5rem 1rem',
-                          backgroundColor: '#F44336',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                          fontSize: '0.875rem'
-                        }}
-                      >
+                      <button onClick={() => handleDeleteRule(rule.id)} style={{ padding: '0.5rem 1rem', backgroundColor: '#F44336', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem' }}>
                         Delete
                       </button>
                     </div>
@@ -418,97 +320,61 @@ function Suricata() {
       {activeTab === 'configs' && (
         <div>
           {/* Create Config Form */}
-          <div style={{
-            backgroundColor: '#fff',
-            padding: '1.5rem',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            marginBottom: '2rem'
-          }}>
-            <h2 style={{ marginBottom: '1rem', color: '#333' }}>Create New Config</h2>
+          <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)', marginBottom: '2rem' }}>
+            <h2 style={{ marginBottom: '1rem' }}>Create New Config</h2>
             <form onSubmit={handleCreateConfig}>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>Config Name</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem' }}>Config Name</label>
                 <input
                   type="text"
                   value={newConfig.config_name}
                   onChange={(e) => setNewConfig({ ...newConfig, config_name: e.target.value })}
                   required
-                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                 />
               </div>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>Config Content</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem' }}>Config Content</label>
                 <textarea
                   value={newConfig.config_content}
                   onChange={(e) => setNewConfig({ ...newConfig, config_content: e.target.value })}
                   required
                   rows={10}
-                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px', fontFamily: 'monospace' }}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid var(--border-color)', borderRadius: '4px', fontFamily: 'monospace', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                 />
               </div>
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>Description</label>
+                <label style={{ display: 'block', marginBottom: '0.5rem' }}>Description</label>
                 <input
                   type="text"
                   value={newConfig.description}
                   onChange={(e) => setNewConfig({ ...newConfig, description: e.target.value })}
-                  style={{ width: '100%', padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  style={{ width: '100%', padding: '0.5rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                 />
               </div>
-              <button
-                type="submit"
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  backgroundColor: '#2196F3',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
+              <button type="submit" style={{ padding: '0.75rem 1.5rem', backgroundColor: 'var(--accent-color)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
                 Create Config
               </button>
             </form>
           </div>
 
           {/* Configs List */}
-          <div style={{
-            backgroundColor: '#fff',
-            padding: '1.5rem',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-          }}>
-            <h2 style={{ marginBottom: '1rem', color: '#333' }}>Suricata Configs ({configs.length})</h2>
+          <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)' }}>
+            <h2 style={{ marginBottom: '1rem' }}>Suricata Configs ({configs.length})</h2>
             
             {loading ? (
-              <p>Loading configs...</p>
+              <p style={{ color: 'var(--text-secondary)' }}>Loading configs...</p>
             ) : configs.length === 0 ? (
-              <p style={{ color: '#666' }}>No configs found.</p>
+              <p style={{ color: 'var(--text-secondary)' }}>No configs found.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {configs.map((config) => (
-                  <div
-                    key={config.id}
-                    style={{
-                      padding: '1rem',
-                      border: '1px solid #ddd',
-                      borderRadius: '4px',
-                      backgroundColor: '#f9f9f9'
-                    }}
-                  >
+                  <div key={config.id} style={{ padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)' }}>
                     <div style={{ marginBottom: '0.5rem' }}>
                       <strong>{config.config_name}</strong>
-                      {config.description && <p style={{ margin: '0.25rem 0', color: '#666', fontSize: '0.875rem' }}>{config.description}</p>}
+                      {config.description && <p style={{ margin: '0.25rem 0', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{config.description}</p>}
                     </div>
-                    <pre style={{
-                      fontSize: '0.75rem',
-                      backgroundColor: '#fff',
-                      padding: '0.5rem',
-                      borderRadius: '4px',
-                      overflow: 'auto',
-                      maxHeight: '300px'
-                    }}>
+                    <pre style={{ fontSize: '0.75rem', backgroundColor: 'var(--bg-secondary)', padding: '0.5rem', borderRadius: '4px', overflow: 'auto', maxHeight: '300px', border: '1px solid var(--border-color)' }}>
                       {config.config_content}
                     </pre>
                   </div>
@@ -523,4 +389,3 @@ function Suricata() {
 }
 
 export default Suricata
-

@@ -180,11 +180,11 @@ const SuricataRules = () => {
   // --- Render ---
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto', minHeight: '100vh', display: 'flex', flexDirection: 'column', color: 'var(--text-primary)' }}>
       
       {/* Header with Reload Button */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h1 style={{ margin: 0, borderBottom: '3px solid #2196F3', paddingBottom: '0.5rem', display: 'inline-block' }}>
+        <h1 style={{ margin: 0, borderBottom: '3px solid var(--accent-color)', paddingBottom: '0.5rem', display: 'inline-block' }}>
           Suricata Management
         </h1>
         
@@ -193,7 +193,7 @@ const SuricataRules = () => {
           disabled={isReloading}
           style={{
             padding: '0.75rem 1.5rem',
-            backgroundColor: isReloading ? '#9e9e9e' : '#f44336', 
+            backgroundColor: isReloading ? 'var(--text-secondary)' : '#f44336', 
             color: '#fff',
             border: 'none',
             borderRadius: '6px',
@@ -203,7 +203,7 @@ const SuricataRules = () => {
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+            boxShadow: 'var(--card-shadow)',
             transition: 'background-color 0.2s'
           }}
           title="Applies all pending rule changes to the live Suricata process"
@@ -213,13 +213,13 @@ const SuricataRules = () => {
       </div>
 
       {/* --- 4 Navigation Tabs --- */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '2px solid #ddd' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '2px solid var(--border-color)' }}>
         <button
           onClick={() => setActiveTab('create')}
           style={{
             padding: '0.75rem 1.5rem',
-            backgroundColor: activeTab === 'create' ? '#2196F3' : 'transparent',
-            color: activeTab === 'create' ? '#fff' : '#666',
+            backgroundColor: activeTab === 'create' ? 'var(--accent-color)' : 'transparent',
+            color: activeTab === 'create' ? '#fff' : 'var(--text-secondary)',
             border: 'none',
             borderRadius: '6px 6px 0 0',
             cursor: 'pointer',
@@ -234,8 +234,8 @@ const SuricataRules = () => {
           onClick={() => setActiveTab('upload')}
           style={{
             padding: '0.75rem 1.5rem',
-            backgroundColor: activeTab === 'upload' ? '#2196F3' : 'transparent',
-            color: activeTab === 'upload' ? '#fff' : '#666',
+            backgroundColor: activeTab === 'upload' ? 'var(--accent-color)' : 'transparent',
+            color: activeTab === 'upload' ? '#fff' : 'var(--text-secondary)',
             border: 'none',
             borderRadius: '6px 6px 0 0',
             cursor: 'pointer',
@@ -250,8 +250,8 @@ const SuricataRules = () => {
           onClick={() => setActiveTab('view')}
           style={{
             padding: '0.75rem 1.5rem',
-            backgroundColor: activeTab === 'view' ? '#2196F3' : 'transparent',
-            color: activeTab === 'view' ? '#fff' : '#666',
+            backgroundColor: activeTab === 'view' ? 'var(--accent-color)' : 'transparent',
+            color: activeTab === 'view' ? '#fff' : 'var(--text-secondary)',
             border: 'none',
             borderRadius: '6px 6px 0 0',
             cursor: 'pointer',
@@ -267,8 +267,8 @@ const SuricataRules = () => {
             onClick={() => setActiveTab('config')}
             style={{
               padding: '0.75rem 1.5rem',
-              backgroundColor: activeTab === 'config' ? '#2196F3' : 'transparent',
-              color: activeTab === 'config' ? '#fff' : '#666',
+              backgroundColor: activeTab === 'config' ? 'var(--accent-color)' : 'transparent',
+              color: activeTab === 'config' ? '#fff' : 'var(--text-secondary)',
               border: 'none',
               borderRadius: '6px 6px 0 0',
               cursor: 'pointer',
@@ -283,19 +283,19 @@ const SuricataRules = () => {
 
       {/* --- Status Messages --- */}
       {error && (
-        <div style={{ padding: '1rem', marginBottom: '1rem', backgroundColor: '#ffebee', color: '#c62828', borderRadius: '4px', border: '1px solid #ffcdd2' }}>
+        <div style={{ padding: '1rem', marginBottom: '1rem', backgroundColor: 'rgba(244, 67, 54, 0.1)', color: '#F44336', borderRadius: '4px', border: '1px solid #F44336' }}>
           ⚠️ {error}
         </div>
       )}
       {success && (
-        <div style={{ padding: '1rem', marginBottom: '1rem', backgroundColor: '#e8f5e9', color: '#2e7d32', borderRadius: '4px', border: '1px solid #c8e6c9' }}>
+        <div style={{ padding: '1rem', marginBottom: '1rem', backgroundColor: 'rgba(76, 175, 80, 0.1)', color: '#4CAF50', borderRadius: '4px', border: '1px solid #4CAF50' }}>
           ✅ {success}
         </div>
       )}
 
       {/* ==================== 1. CREATE TAB ==================== */}
       {activeTab === 'create' && (
-        <div style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+        <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '2rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)' }}>
           <h2 style={{ marginBottom: '1.5rem' }}>Create New Rule</h2>
           <form onSubmit={handleCreateRule}>
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
@@ -306,7 +306,7 @@ const SuricataRules = () => {
                   value={createRuleData.name}
                   onChange={(e) => setCreateRuleData({ ...createRuleData, name: e.target.value })}
                   placeholder="e.g., Detect SQL Injection"
-                  style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}
+                  style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                 />
               </div>
               
@@ -315,7 +315,7 @@ const SuricataRules = () => {
                 <select
                   value={createRuleData.severity}
                   onChange={(e) => setCreateRuleData({ ...createRuleData, severity: e.target.value })}
-                  style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px', backgroundColor: '#f9f9f9' }}
+                  style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                 >
                   <option value="low">Low (Info)</option>
                   <option value="medium">Medium (Warning)</option>
@@ -331,11 +331,11 @@ const SuricataRules = () => {
                 value={createRuleData.content}
                 onChange={(e) => setCreateRuleData({ ...createRuleData, content: e.target.value })}
                 rows={6}
-                style={{ width: '100%', padding: '0.75rem', fontFamily: 'monospace', border: '1px solid #ddd', borderRadius: '4px' }}
+                style={{ width: '100%', padding: '0.75rem', fontFamily: 'monospace', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                 placeholder='alert tcp any any -> any any (msg:"Suspicious Traffic"; sid:10001;)'
                 required
               />
-              <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.5rem' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
                 Note: Valid Suricata syntax required. Parentheses must be balanced.
               </p>
             </div>
@@ -345,7 +345,7 @@ const SuricataRules = () => {
               disabled={loading} 
               style={{ 
                 padding: '0.75rem 2rem', 
-                backgroundColor: loading ? '#ccc' : '#2196F3', 
+                backgroundColor: loading ? 'var(--text-secondary)' : 'var(--accent-color)', 
                 color: '#fff', 
                 border: 'none', 
                 borderRadius: '4px', 
@@ -364,9 +364,9 @@ const SuricataRules = () => {
           
           {/* Top Section: Upload Box (Admin Only) */}
           {isAdmin ? (
-            <div style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+            <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '2rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)' }}>
               <h2 style={{ marginBottom: '1.5rem' }}>Bulk Upload Rules</h2>
-              <div style={{ padding: '2rem', border: '2px dashed #ddd', borderRadius: '8px', textAlign: 'center', marginBottom: '1.5rem', backgroundColor: '#fafafa' }}>
+              <div style={{ padding: '2rem', border: '2px dashed var(--border-color)', borderRadius: '8px', textAlign: 'center', marginBottom: '1.5rem', backgroundColor: 'var(--bg-primary)' }}>
                 <input 
                   type="file" 
                   accept=".rules"
@@ -376,7 +376,7 @@ const SuricataRules = () => {
                 />
                 <label htmlFor="file-upload" style={{ cursor: 'pointer', display: 'block' }}>
                   <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>📂</div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#2196F3' }}>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--accent-color)' }}>
                     {uploadFile ? uploadFile.name : "Click to Select .rules File"}
                   </div>
                 </label>
@@ -395,54 +395,54 @@ const SuricataRules = () => {
               )}
 
               {uploadResult && (
-                <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f0f4f8', borderRadius: '4px', border: '1px solid #d9e2ec' }}>
+                <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: 'var(--hover-bg)', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
                   <p style={{ margin: 0 }}>
-                    <span style={{ color: 'green' }}>✔ Processed: <strong>{uploadResult.processed_count}</strong></span>
-                    <span style={{ margin: '0 1rem', color: '#ccc' }}>|</span>
-                    <span style={{ color: 'orange' }}>⚠ Skipped: <strong>{uploadResult.skipped_count || uploadResult.skipped}</strong></span>
+                    <span style={{ color: '#4CAF50' }}>✔ Processed: <strong>{uploadResult.processed_count}</strong></span>
+                    <span style={{ margin: '0 1rem', color: 'var(--border-color)' }}>|</span>
+                    <span style={{ color: '#FF9800' }}>⚠ Skipped: <strong>{uploadResult.skipped_count || uploadResult.skipped}</strong></span>
                   </p>
                 </div>
               )}
             </div>
           ) : (
-             <div style={{ padding: '1rem', textAlign: 'center', color: '#856404', backgroundColor: '#fff3cd', borderRadius: '4px', border: '1px solid #ffeeba' }}>
+             <div style={{ padding: '1rem', textAlign: 'center', color: '#FF9800', backgroundColor: 'rgba(255, 152, 0, 0.1)', borderRadius: '4px', border: '1px solid #FF9800' }}>
                Only Administrators can perform bulk rule uploads. You are viewing analyst history.
              </div>
           )}
 
           {/* Bottom Section: Analysts rules table */}
-          <div style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+          <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '2rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)' }}>
             <h2 style={{ marginBottom: '1.5rem' }}>Rules by Analysts (History)</h2>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead style={{ backgroundColor: '#f8f9fa' }}>
+                <thead style={{ backgroundColor: 'var(--bg-primary)' }}>
                   <tr>
-                    <th style={{ padding: '0.75rem', borderBottom: '2px solid #ddd' }}>Date</th>
-                    <th style={{ padding: '0.75rem', borderBottom: '2px solid #ddd' }}>Action</th>
-                    <th style={{ padding: '0.75rem', borderBottom: '2px solid #ddd' }}>Analyst</th>
-                    <th style={{ padding: '0.75rem', borderBottom: '2px solid #ddd' }}>Rule Details</th>
+                    <th style={{ padding: '0.75rem', borderBottom: '2px solid var(--border-color)' }}>Date</th>
+                    <th style={{ padding: '0.75rem', borderBottom: '2px solid var(--border-color)' }}>Action</th>
+                    <th style={{ padding: '0.75rem', borderBottom: '2px solid var(--border-color)' }}>Analyst</th>
+                    <th style={{ padding: '0.75rem', borderBottom: '2px solid var(--border-color)' }}>Rule Details</th>
                   </tr>
                 </thead>
                 <tbody>
                   {ruleHistory.map((record, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '0.75rem', fontSize: '0.9rem', color: '#555' }}>
+                    <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      <td style={{ padding: '0.75rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
                         {new Date(record.created_at).toLocaleString()}
                       </td>
-                      <td style={{ padding: '0.75rem', textTransform: 'capitalize', color: record.action === 'created' ? 'green' : '#2196F3', fontWeight: 'bold' }}>
+                      <td style={{ padding: '0.75rem', textTransform: 'capitalize', color: record.action === 'created' ? '#4CAF50' : 'var(--accent-color)', fontWeight: 'bold' }}>
                         {record.action}
                       </td>
                       <td style={{ padding: '0.75rem', fontSize: '0.9rem' }}>
                         {record.user_id ? record.user_id.substring(0,8) + "..." : 'System'}
                       </td>
                       <td style={{ padding: '0.75rem', fontFamily: 'monospace', fontSize: '0.85rem' }}>
-                        {record.metadata?.rule_name && <strong style={{ color: '#d35400' }}>{record.metadata.rule_name}<br/></strong>}
-                        <span style={{ color: '#333' }}>{record.rule_content}</span>
+                        {record.metadata?.rule_name && <strong style={{ color: '#FF9800' }}>{record.metadata.rule_name}<br/></strong>}
+                        <span style={{ color: 'var(--text-primary)' }}>{record.rule_content}</span>
                       </td>
                     </tr>
                   ))}
                   {ruleHistory.length === 0 && (
-                    <tr><td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>No recent rule activities found.</td></tr>
+                    <tr><td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No recent rule activities found.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -456,45 +456,45 @@ const SuricataRules = () => {
       {activeTab === 'view' && (
         <div style={{ display: 'flex', gap: '1.5rem', height: 'calc(100vh - 200px)', alignItems: 'stretch' }}>
           
-          <div style={{ width: '320px', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={{ width: '320px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', boxShadow: 'var(--card-shadow)', padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <div>
-              <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '0.5rem', marginTop: 0 }}>Search Content</h3>
+              <h3 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', marginTop: 0 }}>Search Content</h3>
               <form onSubmit={handleSearch}>
                 <input 
                   type="text" 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Find rule..." 
-                  style={{ width: '100%', padding: '0.5rem', margin: '0.5rem 0', border: '1px solid #ddd', borderRadius: '4px' }}
+                  style={{ width: '100%', padding: '0.5rem', margin: '0.5rem 0', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                 />
-                <button type="submit" style={{ width: '100%', padding: '0.5rem', backgroundColor: '#2196F3', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                <button type="submit" style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--accent-color)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
                   Search
                 </button>
               </form>
             </div>
 
             {activeFileMetadata && (
-              <div style={{ fontSize: '0.85rem', color: '#555', backgroundColor: '#f9f9f9', padding: '0.75rem', borderRadius: '4px' }}>
-                <div><strong>File:</strong> local.rules</div>
-                <div><strong>Lines:</strong> {activeFileMetadata.line_count}</div>
-                <div><strong>Last Modified:</strong><br/>{new Date(activeFileMetadata.modified).toLocaleString()}</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-primary)', padding: '0.75rem', borderRadius: '4px' }}>
+                <div><strong style={{ color: 'var(--text-primary)' }}>File:</strong> local.rules</div>
+                <div><strong style={{ color: 'var(--text-primary)' }}>Lines:</strong> {activeFileMetadata.line_count}</div>
+                <div><strong style={{ color: 'var(--text-primary)' }}>Last Modified:</strong><br/>{new Date(activeFileMetadata.modified).toLocaleString()}</div>
               </div>
             )}
 
             <div style={{ flex: 1 }}>
-              <h3 style={{ borderBottom: '1px solid #eee', paddingBottom: '0.5rem' }}>History & Backups</h3>
+              <h3 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>History & Backups</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
                 {backups.map((bk, i) => (
-                  <div key={i} style={{ padding: '0.75rem', backgroundColor: '#f9f9f9', borderRadius: '4px', fontSize: '0.85rem', border: '1px solid #eee' }}>
+                  <div key={i} style={{ padding: '0.75rem', backgroundColor: 'var(--bg-primary)', borderRadius: '4px', fontSize: '0.85rem', border: '1px solid var(--border-color)' }}>
                     <div style={{ fontWeight: 'bold' }}>{new Date(bk.created_at).toLocaleDateString()}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#888', marginBottom: '0.5rem' }}>{new Date(bk.created_at).toLocaleTimeString()}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>{new Date(bk.created_at).toLocaleTimeString()}</div>
                     
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: '#666' }}>{(bk.size / 1024).toFixed(1)} KB</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>{(bk.size / 1024).toFixed(1)} KB</span>
                       {isAdmin && (
                         <button 
                           onClick={() => handleRestore(bk.filename)}
-                          style={{ padding: '2px 8px', backgroundColor: '#ff9800', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
+                          style={{ padding: '2px 8px', backgroundColor: '#FF9800', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
                         >
                           Restore
                         </button>
@@ -502,31 +502,31 @@ const SuricataRules = () => {
                     </div>
                   </div>
                 ))}
-                {backups.length === 0 && <p style={{ color: '#999', fontSize: '0.9rem', fontStyle: 'italic' }}>No backups found.</p>}
+                {backups.length === 0 && <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', fontStyle: 'italic' }}>No backups found.</p>}
               </div>
             </div>
           </div>
 
-          <div style={{ flex: 1, backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', padding: '0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ padding: '1rem', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fcfcfc' }}>
-              <strong style={{ color: '#333' }}>local.rules</strong>
+          <div style={{ flex: 1, backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', boxShadow: 'var(--card-shadow)', padding: '0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-primary)' }}>
+              <strong style={{ color: 'var(--text-primary)' }}>local.rules</strong>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                 <button onClick={loadFileContent} style={{ padding: '0.25rem 0.5rem', cursor: 'pointer', border: '1px solid #ddd', borderRadius: '4px', background: '#fff' }}>↻ Refresh</button>
+                 <button onClick={loadFileContent} style={{ padding: '0.25rem 0.5rem', cursor: 'pointer', border: '1px solid var(--border-color)', borderRadius: '4px', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>↻ Refresh</button>
               </div>
             </div>
             
-            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', backgroundColor: '#f8f9fa', fontFamily: 'monospace', fontSize: '0.9rem', lineHeight: '1.5' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', backgroundColor: 'var(--bg-secondary)', fontFamily: 'monospace', fontSize: '0.9rem', lineHeight: '1.5' }}>
                {loading ? (
-                 <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>Loading content...</div>
+                 <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading content...</div>
                ) : fileContent && fileContent.length > 0 ? (
                  fileContent.map((line, idx) => (
-                   <div key={idx} style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid #f0f0f0' }}>
-                     <div style={{ width: '40px', color: '#bbb', textAlign: 'right', userSelect: 'none' }}>{idx + 1}</div>
-                     <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', color: line.trim().startsWith('#') ? '#888' : '#333' }}>{line}</div>
+                   <div key={idx} style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border-color)' }}>
+                     <div style={{ width: '40px', color: 'var(--text-secondary)', textAlign: 'right', userSelect: 'none' }}>{idx + 1}</div>
+                     <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', color: line.trim().startsWith('#') ? 'var(--text-secondary)' : 'var(--text-primary)' }}>{line}</div>
                    </div>
                  ))
                ) : (
-                 <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>File is empty or no content loaded.</div>
+                 <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>File is empty or no content loaded.</div>
                )}
             </div>
           </div>
@@ -539,14 +539,14 @@ const SuricataRules = () => {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
           
           <div>
-            <div style={{ backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden', marginBottom: '2rem' }}>
-               <div style={{ padding: '1rem', backgroundColor: '#f8f9fa', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', boxShadow: 'var(--card-shadow)', overflow: 'hidden', marginBottom: '2rem' }}>
+               <div style={{ padding: '1rem', backgroundColor: 'var(--bg-primary)', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                  <h3 style={{ margin: 0 }}>Pending Changes: 5</h3>
-                 <button style={{ color: '#e74c3c', background: 'none', border: 'none', cursor: 'pointer' }}>Discard All</button>
+                 <button style={{ color: '#F44336', background: 'none', border: 'none', cursor: 'pointer' }}>Discard All</button>
                </div>
                
                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                 <thead style={{ backgroundColor: '#eee', fontSize: '0.8rem' }}>
+                 <thead style={{ backgroundColor: 'var(--bg-primary)', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                    <tr>
                      <th style={{ textAlign: 'left', padding: '0.5rem 1rem' }}>CHANGE TYPE</th>
                      <th style={{ textAlign: 'left', padding: '0.5rem 1rem' }}>DESCRIPTION</th>
@@ -561,22 +561,22 @@ const SuricataRules = () => {
                      { type: 'Config Changed', desc: 'alert-threshold', action: 'Undo' },
                      { type: 'Rules Imported', desc: 'custom-rules.txt', action: 'Undo' },
                    ].map((change, idx) => (
-                     <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+                     <tr key={idx} style={{ borderBottom: '1px solid var(--border-color)' }}>
                        <td style={{ padding: '0.75rem 1rem' }}>{change.type}</td>
                        <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace' }}>{change.desc}</td>
                        <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                         <button style={{ color: '#3498db', border: 'none', background: 'none', cursor: 'pointer' }}>[{change.action}]</button>
+                         <button style={{ color: 'var(--accent-color)', border: 'none', background: 'none', cursor: 'pointer' }}>[{change.action}]</button>
                        </td>
                      </tr>
                    ))}
                  </tbody>
                </table>
-               <div style={{ padding: '0.5rem', textAlign: 'center', color: '#3498db', cursor: 'pointer' }}>View All</div>
+               <div style={{ padding: '0.5rem', textAlign: 'center', color: 'var(--accent-color)', cursor: 'pointer' }}>View All</div>
             </div>
 
-            <div style={{ backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', padding: '1.5rem' }}>
+            <div style={{ backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', boxShadow: 'var(--card-shadow)', padding: '1.5rem' }}>
                <h3 style={{ marginBottom: '1rem' }}>Apply Changes</h3>
-               <div style={{ padding: '1rem', backgroundColor: '#fff3cd', color: '#856404', borderRadius: '4px', marginBottom: '1.5rem' }}>
+               <div style={{ padding: '1rem', backgroundColor: 'rgba(255, 152, 0, 0.1)', color: '#FF9800', borderRadius: '4px', marginBottom: '1.5rem', border: '1px solid #FF9800' }}>
                  <strong>⚠ Warning:</strong> Applying changes will restart the Suricata service. Estimated downtime: ~15 seconds.
                </div>
 
@@ -587,7 +587,7 @@ const SuricataRules = () => {
                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                    <input type="radio" name="apply" defaultChecked /> Apply and schedule restart
                  </label>
-                 <select style={{ marginLeft: '1.5rem', padding: '0.25rem', borderRadius: '4px' }}>
+                 <select style={{ marginLeft: '1.5rem', padding: '0.25rem', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
                    <option>2026-02-04 23:00</option>
                  </select>
                </div>
@@ -602,22 +602,22 @@ const SuricataRules = () => {
                </div>
 
                <div style={{ display: 'flex', gap: '1rem' }}>
-                 <button style={{ flex: 1, padding: '0.75rem', border: '1px solid #ddd', background: '#fff', borderRadius: '4px', cursor: 'pointer' }}>Test Configuration</button>
-                 <button style={{ flex: 1, padding: '0.75rem', border: 'none', background: '#3498db', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Apply Changes</button>
+                 <button style={{ flex: 1, padding: '0.75rem', border: '1px solid var(--border-color)', background: 'var(--bg-primary)', color: 'var(--text-primary)', borderRadius: '4px', cursor: 'pointer' }}>Test Configuration</button>
+                 <button style={{ flex: 1, padding: '0.75rem', border: 'none', background: 'var(--accent-color)', color: '#fff', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Apply Changes</button>
                </div>
             </div>
           </div>
 
           <div>
-            <div style={{ backgroundColor: '#2d3436', color: '#dfe6e9', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', overflow: 'hidden', height: '100%' }}>
-              <div style={{ padding: '0.75rem', backgroundColor: '#636e72', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ backgroundColor: 'var(--sidebar-bg)', color: 'var(--sidebar-text)', borderRadius: '8px', boxShadow: 'var(--card-shadow)', overflow: 'hidden', height: '100%' }}>
+              <div style={{ padding: '0.75rem', backgroundColor: 'rgba(0,0,0,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>suricata.yaml</span>
                 <div>
-                  <button style={{ padding: '0.25rem 0.5rem', marginRight: '0.5rem', cursor: 'pointer' }}>Edit</button>
-                  <button style={{ padding: '0.25rem 0.5rem', cursor: 'pointer' }}>Validate</button>
+                  <button style={{ padding: '0.25rem 0.5rem', marginRight: '0.5rem', cursor: 'pointer', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px' }}>Edit</button>
+                  <button style={{ padding: '0.25rem 0.5rem', cursor: 'pointer', background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px' }}>Validate</button>
                 </div>
               </div>
-              <pre style={{ padding: '1rem', fontFamily: 'monospace', lineHeight: '1.5', margin: 0, overflow: 'auto' }}>
+              <pre style={{ padding: '1rem', fontFamily: 'monospace', lineHeight: '1.5', margin: 0, overflow: 'auto', color: 'var(--sidebar-text)' }}>
 {`# Suricata Configuration
 vars:
   address-groups:

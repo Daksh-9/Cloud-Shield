@@ -55,15 +55,12 @@ function AlertManagement() {
   };
 
   const handleResolve = (id) => {
-    // Marks as resolved. In a real app, this might send a PUT request to the backend
-    // and we filter out 'resolved' alerts from the active view.
     setAlerts(alerts.map(alert => 
       alert.id === id ? { ...alert, status: 'resolved' } : alert
     ));
   };
 
   const handleBlockIP = (ip) => {
-    // Simulates calling the backend to add the IP to a firewall blocklist
     window.alert(`Security Action: IP ${ip} has been successfully added to the blocklist.`);
   };
 
@@ -103,10 +100,10 @@ function AlertManagement() {
 
   const getSeverityStyle = (severity) => {
     const styles = {
-      Critical: { color: '#d32f2f', bg: '#ffebee', icon: '🔴' },
-      High: { color: '#ed6c02', bg: '#fff3e0', icon: '🟠' },
-      Medium: { color: '#ef6c00', bg: '#fff8e1', icon: '🟡' },
-      Low: { color: '#2e7d32', bg: '#e8f5e9', icon: '🟢' }
+      Critical: { color: '#F44336', icon: '🔴' }, // Red
+      High: { color: '#FF9800', icon: '🟠' },     // Orange
+      Medium: { color: '#FFC107', icon: '🟡' },   // Yellow
+      Low: { color: '#4CAF50', icon: '🟢' }       // Green
     };
     return styles[severity] || styles.Low;
   };
@@ -117,10 +114,10 @@ function AlertManagement() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
-          <h1 style={{ margin: 0, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <h1 style={{ margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
             Active Alerts 
             {unresolvedCount > 0 && (
-              <span style={{ fontSize: '0.9rem', backgroundColor: '#d32f2f', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '12px' }}>
+              <span style={{ fontSize: '0.9rem', backgroundColor: '#F44336', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '12px' }}>
                 🔔 {unresolvedCount} Unresolved
               </span>
             )}
@@ -128,7 +125,7 @@ function AlertManagement() {
         </div>
         
         {/* Filter Pills */}
-        <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: '#fff', padding: '0.25rem', borderRadius: '6px', border: '1px solid #ddd' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: 'var(--bg-secondary)', padding: '0.25rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
           {['All', 'Critical', 'High', 'Medium', 'Low'].map(filter => (
             <button 
               key={filter}
@@ -138,8 +135,8 @@ function AlertManagement() {
                 border: 'none',
                 borderRadius: '4px',
                 cursor: 'pointer',
-                backgroundColor: activeFilter === filter ? '#333' : 'transparent',
-                color: activeFilter === filter ? '#fff' : '#666',
+                backgroundColor: activeFilter === filter ? 'var(--accent-color)' : 'transparent',
+                color: activeFilter === filter ? '#fff' : 'var(--text-secondary)',
                 fontWeight: '500',
                 transition: 'all 0.2s'
               }}
@@ -153,7 +150,7 @@ function AlertManagement() {
       {/* Alert List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         {displayedAlerts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: '#f9f9f9', borderRadius: '8px', color: '#666' }}>
+          <div style={{ textAlign: 'center', padding: '3rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}>
             No active alerts matching the selected filter.
           </div>
         ) : (
@@ -161,22 +158,23 @@ function AlertManagement() {
             const style = getSeverityStyle(alert.severity);
             return (
               <div key={alert.id} style={{ 
-                backgroundColor: '#fff', 
+                backgroundColor: 'var(--bg-secondary)', 
                 borderRadius: '8px', 
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)', 
+                boxShadow: 'var(--card-shadow)', 
                 overflow: 'hidden',
+                border: '1px solid var(--border-color)',
                 borderLeft: `5px solid ${style.color}`,
                 transition: 'transform 0.2s ease'
               }}>
                 {/* Alert Header */}
-                <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fafafa' }}>
+                <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-primary)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <span style={{ fontSize: '1.2rem' }}>{style.icon}</span>
                     <span style={{ fontWeight: 'bold', color: style.color }}>{alert.severity.toUpperCase()}</span>
-                    <span style={{ color: '#ccc' }}>|</span>
-                    <span style={{ fontWeight: '600', color: '#333' }}>{alert.title}</span>
+                    <span style={{ color: 'var(--border-color)' }}>|</span>
+                    <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{alert.title}</span>
                   </div>
-                  <div style={{ fontSize: '0.9rem', color: '#666', fontFamily: 'monospace' }}>{alert.timestamp}</div>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{alert.timestamp}</div>
                 </div>
 
                 {/* Alert Body */}
@@ -186,17 +184,17 @@ function AlertManagement() {
                     {/* Left Column: Network Info */}
                     <div>
                       <div style={{ marginBottom: '1rem' }}>
-                        <span style={{ color: '#888', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>Source</span>
-                        <span style={{ fontFamily: 'monospace', fontSize: '1.1rem', backgroundColor: '#eee', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>{alert.source}</span>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>Source</span>
+                        <span style={{ fontFamily: 'monospace', fontSize: '1.1rem', backgroundColor: 'var(--hover-bg)', color: 'var(--text-primary)', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)' }}>{alert.source}</span>
                       </div>
                       <div style={{ marginBottom: '1rem' }}>
-                        <span style={{ color: '#888', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>Target</span>
-                        <span style={{ fontFamily: 'monospace', fontSize: '1.1rem' }}>{alert.target}</span>
+                        <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', display: 'block', marginBottom: '0.25rem' }}>Target</span>
+                        <span style={{ fontFamily: 'monospace', fontSize: '1.1rem', color: 'var(--text-primary)' }}>{alert.target}</span>
                       </div>
                       
                       {alert.status === 'acknowledged' && (
-                         <div style={{ marginTop: '1.5rem', padding: '0.75rem', backgroundColor: '#e3f2fd', borderRadius: '4px', fontSize: '0.9rem', color: '#1565c0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                           <span>✓</span> Acknowledged by <strong>{alert.ackBy}</strong> ({alert.ackTime})
+                         <div style={{ marginTop: '1.5rem', padding: '0.75rem', backgroundColor: 'rgba(33, 150, 243, 0.1)', border: '1px solid rgba(33, 150, 243, 0.3)', borderRadius: '4px', fontSize: '0.9rem', color: 'var(--accent-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                           <span>✓</span> Acknowledged by <strong style={{color: 'var(--text-primary)'}}>{alert.ackBy}</strong> ({alert.ackTime})
                          </div>
                       )}
                     </div>
@@ -205,44 +203,44 @@ function AlertManagement() {
                     <div>
                       {Object.entries(alert.details).map(([key, val]) => (
                         <div key={key} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.95rem' }}>
-                          <span style={{ color: '#666' }}>{key}:</span>
-                          <span style={{ fontWeight: '500' }}>{val}</span>
+                          <span style={{ color: 'var(--text-secondary)' }}>{key}:</span>
+                          <span style={{ fontWeight: '500', color: 'var(--text-primary)' }}>{val}</span>
                         </div>
                       ))}
-                      <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#666' }}>Matched Rule:</span>
-                        <span style={{ color: '#2196F3', fontWeight: '500' }}>{alert.rule}</span>
+                      <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Matched Rule:</span>
+                        <span style={{ color: 'var(--accent-color)', fontWeight: '500' }}>{alert.rule}</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem' }}>
-                         <span style={{ color: '#666' }}>Confidence:</span>
-                         <span style={{ fontWeight: 'bold', color: alert.confidence > 90 ? '#2e7d32' : '#ff9800' }}>{alert.confidence}%</span>
+                         <span style={{ color: 'var(--text-secondary)' }}>Confidence:</span>
+                         <span style={{ fontWeight: 'bold', color: alert.confidence > 90 ? '#4CAF50' : '#FF9800' }}>{alert.confidence}%</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Actions Footer */}
-                  <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #eee', display: 'flex', gap: '0.75rem' }}>
+                  <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '0.75rem' }}>
                     {alert.status === 'unresolved' && (
                       <button 
                         onClick={() => handleAcknowledge(alert.id)}
-                        style={{ padding: '0.5rem 1rem', backgroundColor: '#2196F3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '500', transition: 'background 0.2s' }}>
+                        style={{ padding: '0.5rem 1rem', backgroundColor: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '500', transition: 'background 0.2s' }}>
                         Acknowledge
                       </button>
                     )}
                     <button 
                       onClick={() => handleBlockIP(alert.source)}
-                      style={{ padding: '0.5rem 1rem', backgroundColor: '#fff', color: '#d32f2f', border: '1px solid #d32f2f', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}>
-                      Block IP
+                      style={{ padding: '0.5rem 1rem', backgroundColor: 'transparent', color: '#F44336', border: '1px solid #F44336', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}>
+                        Block IP
                     </button>
                     <button 
                       onClick={() => handleMute(alert.id)}
-                      style={{ padding: '0.5rem 1rem', backgroundColor: '#fff', color: '#666', border: '1px solid #ccc', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}>
-                      Mute 1h
+                      style={{ padding: '0.5rem 1rem', backgroundColor: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}>
+                        Mute 1h
                     </button>
                     <button 
                       onClick={() => handleResolve(alert.id)}
-                      style={{ padding: '0.5rem 1rem', backgroundColor: '#e8f5e9', color: '#2e7d32', border: '1px solid #2e7d32', borderRadius: '4px', cursor: 'pointer', marginLeft: 'auto', fontWeight: 'bold' }}>
-                      Resolve
+                      style={{ padding: '0.5rem 1rem', backgroundColor: 'rgba(76, 175, 80, 0.1)', color: '#4CAF50', border: '1px solid #4CAF50', borderRadius: '4px', cursor: 'pointer', marginLeft: 'auto', fontWeight: 'bold' }}>
+                        Resolve
                     </button>
                   </div>
                 </div>
@@ -256,12 +254,12 @@ function AlertManagement() {
       <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
         <button 
           onClick={handleMarkAllRead}
-          style={{ color: '#2196F3', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontWeight: '500' }}>
+          style={{ color: 'var(--accent-color)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontWeight: '500' }}>
           Mark All Unresolved as Read
         </button>
         <button 
           onClick={handleExportReport}
-          style={{ color: '#2196F3', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontWeight: '500' }}>
+          style={{ color: 'var(--accent-color)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontWeight: '500' }}>
           Export Alerts Report (JSON)
         </button>
       </div>

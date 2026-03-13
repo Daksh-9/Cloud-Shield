@@ -126,19 +126,19 @@ function MLDetection() {
   }
 
   return (
-    <div>
-      <h1 style={{ marginBottom: '2rem', color: '#1a1a1a' }}>ML Detection</h1>
+    <div style={{ color: 'var(--text-primary)' }}>
+      <h1 style={{ marginBottom: '2rem' }}>ML Detection</h1>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '2px solid #ddd' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '2px solid var(--border-color)' }}>
         <button
           onClick={() => setActiveTab('inference')}
           style={{
             padding: '0.75rem 1.5rem',
-            backgroundColor: activeTab === 'inference' ? '#2196F3' : 'transparent',
-            color: activeTab === 'inference' ? '#fff' : '#666',
+            backgroundColor: activeTab === 'inference' ? 'var(--accent-color)' : 'transparent',
+            color: activeTab === 'inference' ? '#fff' : 'var(--text-secondary)',
             border: 'none',
-            borderBottom: activeTab === 'inference' ? '2px solid #2196F3' : 'none',
+            borderBottom: activeTab === 'inference' ? '2px solid var(--accent-color)' : 'none',
             cursor: 'pointer',
             fontSize: '1rem',
             marginBottom: '-2px'
@@ -150,10 +150,10 @@ function MLDetection() {
           onClick={() => setActiveTab('detections')}
           style={{
             padding: '0.75rem 1.5rem',
-            backgroundColor: activeTab === 'detections' ? '#2196F3' : 'transparent',
-            color: activeTab === 'detections' ? '#fff' : '#666',
+            backgroundColor: activeTab === 'detections' ? 'var(--accent-color)' : 'transparent',
+            color: activeTab === 'detections' ? '#fff' : 'var(--text-secondary)',
             border: 'none',
-            borderBottom: activeTab === 'detections' ? '2px solid #2196F3' : 'none',
+            borderBottom: activeTab === 'detections' ? '2px solid var(--accent-color)' : 'none',
             cursor: 'pointer',
             fontSize: '1rem',
             marginBottom: '-2px'
@@ -165,44 +165,25 @@ function MLDetection() {
 
       {/* Messages */}
       {error && (
-        <div style={{
-          padding: '1rem',
-          marginBottom: '1rem',
-          backgroundColor: '#fee',
-          color: '#c33',
-          borderRadius: '4px',
-          border: '1px solid #fcc'
-        }}>
+        <div style={{ padding: '1rem', marginBottom: '1rem', backgroundColor: 'rgba(244, 67, 54, 0.1)', color: '#F44336', borderRadius: '4px', border: '1px solid #F44336' }}>
           {error}
         </div>
       )}
 
       {success && (
-        <div style={{
-          padding: '1rem',
-          marginBottom: '1rem',
-          backgroundColor: '#efe',
-          color: '#3c3',
-          borderRadius: '4px',
-          border: '1px solid #cfc'
-        }}>
+        <div style={{ padding: '1rem', marginBottom: '1rem', backgroundColor: 'rgba(76, 175, 80, 0.1)', color: '#4CAF50', borderRadius: '4px', border: '1px solid #4CAF50' }}>
           {success}
         </div>
       )}
 
       {/* Inference Tab */}
       {activeTab === 'inference' && (
-        <div style={{
-          backgroundColor: '#fff',
-          padding: '1.5rem',
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        }}>
-          <h2 style={{ marginBottom: '1rem', color: '#333' }}>Run ML Inference</h2>
+        <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)', border: '1px solid var(--border-color)' }}>
+          <h2 style={{ marginBottom: '1rem' }}>Run ML Inference</h2>
           
           <form onSubmit={handleRunInference}>
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem' }}>
                 Input Data (JSON)
               </label>
               <textarea
@@ -213,16 +194,18 @@ function MLDetection() {
                 style={{
                   width: '100%',
                   padding: '0.5rem',
-                  border: '1px solid #ddd',
+                  border: '1px solid var(--border-color)',
                   borderRadius: '4px',
                   fontFamily: 'monospace',
-                  fontSize: '0.875rem'
+                  fontSize: '0.875rem',
+                  backgroundColor: 'var(--bg-primary)',
+                  color: 'var(--text-primary)'
                 }}
               />
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', color: '#333' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem' }}>
                 Model Name (optional)
               </label>
               <select
@@ -231,8 +214,10 @@ function MLDetection() {
                 style={{
                   width: '100%',
                   padding: '0.5rem',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px'
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '4px',
+                  backgroundColor: 'var(--bg-primary)',
+                  color: 'var(--text-primary)'
                 }}
               >
                 <option value="">Use Default Model</option>
@@ -258,7 +243,7 @@ function MLDetection() {
               disabled={loading}
               style={{
                 padding: '0.75rem 1.5rem',
-                backgroundColor: loading ? '#ccc' : '#2196F3',
+                backgroundColor: loading ? 'var(--text-secondary)' : 'var(--accent-color)',
                 color: '#fff',
                 border: 'none',
                 borderRadius: '4px',
@@ -274,11 +259,11 @@ function MLDetection() {
             <div style={{
               marginTop: '2rem',
               padding: '1.5rem',
-              backgroundColor: '#f9f9f9',
+              backgroundColor: 'var(--bg-primary)',
               borderRadius: '4px',
               border: `2px solid ${getConfidenceColor(inferenceResult.confidence)}`
             }}>
-              <h3 style={{ marginBottom: '1rem', color: '#333' }}>Inference Result</h3>
+              <h3 style={{ marginBottom: '1rem' }}>Inference Result</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
                 <div>
                   <strong>Prediction:</strong> {inferenceResult.prediction}
@@ -296,9 +281,11 @@ function MLDetection() {
               {inferenceResult.alert_id && (
                 <div style={{
                   padding: '0.75rem',
-                  backgroundColor: '#fff3cd',
+                  backgroundColor: 'rgba(255, 152, 0, 0.1)',
                   borderRadius: '4px',
-                  marginTop: '1rem'
+                  marginTop: '1rem',
+                  border: '1px solid #FF9800',
+                  color: '#FF9800'
                 }}>
                   <strong>Alert Created:</strong> Alert ID {inferenceResult.alert_id}
                 </div>
@@ -308,10 +295,11 @@ function MLDetection() {
                 <pre style={{
                   marginTop: '0.5rem',
                   padding: '0.5rem',
-                  backgroundColor: '#fff',
+                  backgroundColor: 'var(--bg-secondary)',
                   borderRadius: '4px',
                   fontSize: '0.75rem',
-                  overflow: 'auto'
+                  overflow: 'auto',
+                  border: '1px solid var(--border-color)'
                 }}>
                   {JSON.stringify(inferenceResult.features, null, 2)}
                 </pre>
@@ -326,16 +314,17 @@ function MLDetection() {
         <div>
           {/* Filters */}
           <div style={{
-            backgroundColor: '#fff',
+            backgroundColor: 'var(--bg-secondary)',
             padding: '1.5rem',
             borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            marginBottom: '2rem'
+            boxShadow: 'var(--card-shadow)',
+            marginBottom: '2rem',
+            border: '1px solid var(--border-color)'
           }}>
-            <h2 style={{ marginBottom: '1rem', color: '#333', fontSize: '1.2rem' }}>Filters</h2>
+            <h2 style={{ marginBottom: '1rem', fontSize: '1.2rem' }}>Filters</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#666', fontSize: '0.9rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                   Detection Type
                 </label>
                 <select
@@ -345,9 +334,11 @@ function MLDetection() {
                   style={{
                     width: '100%',
                     padding: '0.5rem',
-                    border: '1px solid #ddd',
+                    border: '1px solid var(--border-color)',
                     borderRadius: '4px',
-                    fontSize: '0.9rem'
+                    fontSize: '0.9rem',
+                    backgroundColor: 'var(--bg-primary)',
+                    color: 'var(--text-primary)'
                   }}
                 >
                   <option value="">All</option>
@@ -358,7 +349,7 @@ function MLDetection() {
                 </select>
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#666', fontSize: '0.9rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                   Model Name
                 </label>
                 <input
@@ -370,14 +361,16 @@ function MLDetection() {
                   style={{
                     width: '100%',
                     padding: '0.5rem',
-                    border: '1px solid #ddd',
+                    border: '1px solid var(--border-color)',
                     borderRadius: '4px',
-                    fontSize: '0.9rem'
+                    fontSize: '0.9rem',
+                    backgroundColor: 'var(--bg-primary)',
+                    color: 'var(--text-primary)'
                   }}
                 />
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: '#666', fontSize: '0.9rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                   Min Confidence
                 </label>
                 <input
@@ -392,9 +385,11 @@ function MLDetection() {
                   style={{
                     width: '100%',
                     padding: '0.5rem',
-                    border: '1px solid #ddd',
+                    border: '1px solid var(--border-color)',
                     borderRadius: '4px',
-                    fontSize: '0.9rem'
+                    fontSize: '0.9rem',
+                    backgroundColor: 'var(--bg-primary)',
+                    color: 'var(--text-primary)'
                   }}
                 />
               </div>
@@ -404,7 +399,7 @@ function MLDetection() {
                 onClick={applyFilters}
                 style={{
                   padding: '0.5rem 1.5rem',
-                  backgroundColor: '#2196F3',
+                  backgroundColor: 'var(--accent-color)',
                   color: '#fff',
                   border: 'none',
                   borderRadius: '4px',
@@ -418,7 +413,7 @@ function MLDetection() {
                 onClick={clearFilters}
                 style={{
                   padding: '0.5rem 1.5rem',
-                  backgroundColor: '#666',
+                  backgroundColor: 'var(--text-secondary)',
                   color: '#fff',
                   border: 'none',
                   borderRadius: '4px',
@@ -433,19 +428,20 @@ function MLDetection() {
 
           {/* Detections List */}
           <div style={{
-            backgroundColor: '#fff',
+            backgroundColor: 'var(--bg-secondary)',
             padding: '1.5rem',
             borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            boxShadow: 'var(--card-shadow)',
+            border: '1px solid var(--border-color)'
           }}>
-            <h2 style={{ marginBottom: '1rem', color: '#333' }}>
+            <h2 style={{ marginBottom: '1rem' }}>
               Detection History ({detections.length})
             </h2>
 
             {loading ? (
-              <p>Loading detections...</p>
+              <p style={{ color: 'var(--text-secondary)' }}>Loading detections...</p>
             ) : detections.length === 0 ? (
-              <p style={{ color: '#666' }}>No detections found.</p>
+              <p style={{ color: 'var(--text-secondary)' }}>No detections found.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {detections.map((detection) => (
@@ -455,16 +451,16 @@ function MLDetection() {
                       padding: '1rem',
                       border: `2px solid ${getConfidenceColor(detection.confidence)}`,
                       borderRadius: '4px',
-                      backgroundColor: '#f9f9f9'
+                      backgroundColor: 'var(--bg-primary)'
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '0.5rem' }}>
                       <div>
                         <strong style={{ fontSize: '1.1rem' }}>{detection.prediction}</strong>
-                        <div style={{ display: 'flex', gap: '1rem', marginTop: '0.25rem', fontSize: '0.875rem', color: '#666' }}>
-                          <span><strong>Type:</strong> {detection.detection_type}</span>
-                          <span><strong>Model:</strong> {detection.model_name}</span>
-                          <span><strong>Time:</strong> {formatDate(detection.created_at)}</span>
+                        <div style={{ display: 'flex', gap: '1rem', marginTop: '0.25rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                          <span><strong style={{ color: 'var(--text-primary)' }}>Type:</strong> {detection.detection_type}</span>
+                          <span><strong style={{ color: 'var(--text-primary)' }}>Model:</strong> {detection.model_name}</span>
+                          <span><strong style={{ color: 'var(--text-primary)' }}>Time:</strong> {formatDate(detection.created_at)}</span>
                         </div>
                       </div>
                       <div>
@@ -483,7 +479,7 @@ function MLDetection() {
                       </div>
                     </div>
                     {(detection.related_log_id || detection.related_alert_id) && (
-                      <div style={{ fontSize: '0.875rem', color: '#666', marginTop: '0.5rem' }}>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
                         {detection.related_log_id && <span>Log ID: {detection.related_log_id} </span>}
                         {detection.related_alert_id && <span>Alert ID: {detection.related_alert_id}</span>}
                       </div>
@@ -493,10 +489,11 @@ function MLDetection() {
                       <pre style={{
                         marginTop: '0.5rem',
                         padding: '0.5rem',
-                        backgroundColor: '#fff',
+                        backgroundColor: 'var(--bg-secondary)',
                         borderRadius: '4px',
                         fontSize: '0.75rem',
-                        overflow: 'auto'
+                        overflow: 'auto',
+                        border: '1px solid var(--border-color)'
                       }}>
                         {JSON.stringify(detection.features, null, 2)}
                       </pre>
@@ -513,4 +510,3 @@ function MLDetection() {
 }
 
 export default MLDetection
-
