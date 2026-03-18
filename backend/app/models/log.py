@@ -26,10 +26,11 @@ class LogCreate(LogBase):
 class LogResponse(LogBase):
     """Schema for log response."""
     id: str
-    timestamp: datetime
-    user_id: Optional[str]
-    target_id: Optional[str]
-    created_at: datetime
+    # FIXED: Added default values to prevent ValidationErrors on missing/old data
+    timestamp: Optional[datetime] = None
+    user_id: Optional[str] = None
+    target_id: Optional[str] = None
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

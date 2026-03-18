@@ -243,49 +243,56 @@ const UserProfile = () => {
 
   // --- RENDER ---
 
-  if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading profile...</div>;
+  if (loading) return <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading profile securely...</div>;
 
   const tabs = ['Profile', 'Security', 'Preferences', 'Notifications', 'Activity Log'];
   if (profile.role === 'admin') tabs.push('System Admin');
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
-      <h1 style={{ marginBottom: '1.5rem', borderBottom: '2px solid #333', paddingBottom: '0.5rem', color: '#1a1a1a' }}>User Profile & Settings</h1>
+    <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto', color: 'var(--text-primary)' }}>
+      
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem', marginBottom: '2rem' }}>
+        <div>
+          <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span>👤</span> User Profile & Settings
+          </h1>
+          <p style={{ margin: '0.5rem 0 0 0', color: 'var(--text-secondary)' }}>Manage your account, security, and preferences</p>
+        </div>
+      </div>
 
+      {/* Global Notifications */}
       {message.text && (
-        <div style={{
-          padding: '1rem', marginBottom: '1.5rem', borderRadius: '4px',
-          backgroundColor: message.type === 'success' ? '#efe' : '#fee',
-          color: message.type === 'success' ? '#3c3' : '#c33',
-          border: `1px solid ${message.type === 'success' ? '#cfc' : '#fcc'}`
-        }}>
-          {message.text}
+        <div style={{ padding: '1rem', marginBottom: '2rem', backgroundColor: message.type === 'success' ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: message.type === 'success' ? '#4CAF50' : '#F44336', borderRadius: '4px', border: `1px solid ${message.type === 'success' ? '#4CAF50' : '#F44336'}` }}>
+          {message.type === 'success' ? '✅ ' : '⚠️ '} {message.text}
         </div>
       )}
 
       {/* Tab Navigation */}
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', flexWrap: 'wrap', borderBottom: '2px solid #ddd' }}>
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => {
-              setActiveTab(tab.toLowerCase());
-              setMessage({ type: '', text: '' }); 
-            }}
-            style={{
-              padding: '0.75rem 1.5rem',
-              backgroundColor: activeTab === tab.toLowerCase() ? '#2196F3' : 'transparent',
-              color: activeTab === tab.toLowerCase() ? '#fff' : '#666',
-              border: 'none',
-              borderBottom: activeTab === tab.toLowerCase() ? '2px solid #2196F3' : 'none',
-              cursor: 'pointer',
-              fontWeight: activeTab === tab.toLowerCase() ? 'bold' : 'normal',
-              marginBottom: '-2px',
-            }}
-          >
-            {tab}
-          </button>
-        ))}
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', flexWrap: 'wrap', borderBottom: '2px solid var(--border-color)' }}>
+        {tabs.map((tab) => {
+          const tabKey = tab.toLowerCase();
+          const isActive = activeTab === tabKey;
+          return (
+            <button
+              key={tab}
+              onClick={() => { setActiveTab(tabKey); setMessage({ type: '', text: '' }); }}
+              style={{
+                padding: '0.75rem 1.5rem',
+                backgroundColor: isActive ? 'var(--accent-color)' : 'transparent',
+                color: isActive ? '#fff' : 'var(--text-secondary)',
+                border: 'none',
+                borderRadius: '6px 6px 0 0',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                transition: 'all 0.2s',
+                marginBottom: '-2px' // Overlap border
+              }}
+            >
+              {tab}
+            </button>
+          );
+        })}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
@@ -295,18 +302,18 @@ const UserProfile = () => {
           
           {/* PROFILE TAB */}
           {activeTab === 'profile' && (
-            <div style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-              <h2 style={{ marginBottom: '1.5rem', color: '#333' }}>Profile Information</h2>
+            <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '2rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)', border: '1px solid var(--border-color)' }}>
+              <h2 style={{ margin: '0 0 1.5rem 0', color: 'var(--text-primary)' }}>Profile Information</h2>
               
-              <div style={{ display: 'flex', gap: '2rem', marginBottom: '2rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ width: '100px', height: '100px', borderRadius: '50%', backgroundColor: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>👤</div>
+              <div style={{ display: 'flex', gap: '2rem', marginBottom: '2rem', paddingBottom: '2rem', borderBottom: '1px solid var(--border-color)' }}>
+                <div style={{ width: '100px', height: '100px', borderRadius: '50%', backgroundColor: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', border: '1px solid var(--border-color)' }}>
+                  🧑‍💻
                 </div>
                 
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                   <div style={{ marginBottom: '0.5rem', fontSize: '1.1rem' }}><strong>{profile.email}</strong></div>
+                   <div style={{ marginBottom: '0.5rem', fontSize: '1.2rem', fontWeight: 'bold' }}>{profile.email}</div>
                    <div>
-                     <span style={{ backgroundColor: profile.role === 'admin' ? '#e74c3c' : '#3498db', color: 'white', padding: '4px 12px', borderRadius: '4px', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: 'bold' }}>
+                     <span style={{ backgroundColor: profile.role === 'admin' ? 'rgba(156, 39, 176, 0.15)' : 'rgba(33, 150, 243, 0.15)', color: profile.role === 'admin' ? '#9C27B0' : '#2196F3', padding: '4px 12px', borderRadius: '4px', fontSize: '0.85rem', textTransform: 'uppercase', fontWeight: 'bold', border: `1px solid ${profile.role === 'admin' ? 'rgba(156, 39, 176, 0.3)' : 'rgba(33, 150, 243, 0.3)'}` }}>
                        {profile.role}
                      </span>
                    </div>
@@ -315,20 +322,20 @@ const UserProfile = () => {
 
               <form onSubmit={handleProfileSubmit} style={{ display: 'grid', gap: '1.2rem', maxWidth: '600px' }}>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>Full Name</label>
-                  <input type="text" value={profile.full_name} onChange={(e) => setProfile({...profile, full_name: e.target.value})} required style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }} />
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: 'var(--text-secondary)', fontSize: '0.9rem', textTransform: 'uppercase' }}>Full Name</label>
+                  <input type="text" value={profile.full_name} onChange={(e) => setProfile({...profile, full_name: e.target.value})} required style={{ width: '100%', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', outline: 'none' }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>Phone Number</label>
-                  <input type="tel" value={profile.phone} onChange={(e) => setProfile({...profile, phone: e.target.value})} placeholder="+1 (555) 000-0000" style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }} />
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: 'var(--text-secondary)', fontSize: '0.9rem', textTransform: 'uppercase' }}>Phone Number</label>
+                  <input type="tel" value={profile.phone} onChange={(e) => setProfile({...profile, phone: e.target.value})} placeholder="+1 (555) 000-0000" style={{ width: '100%', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', outline: 'none' }} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>Department</label>
-                  <input type="text" value={profile.department} onChange={(e) => setProfile({...profile, department: e.target.value})} placeholder="e.g. Security Operations" style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }} />
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: 'var(--text-secondary)', fontSize: '0.9rem', textTransform: 'uppercase' }}>Department</label>
+                  <input type="text" value={profile.department} onChange={(e) => setProfile({...profile, department: e.target.value})} placeholder="e.g. Security Operations" style={{ width: '100%', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', outline: 'none' }} />
                 </div>
-                <div style={{ marginTop: '0.5rem' }}>
-                  <button type="submit" disabled={saving} style={{ padding: '0.75rem 1.5rem', backgroundColor: '#2196F3', color: 'white', border: 'none', borderRadius: '4px', cursor: saving ? 'not-allowed' : 'pointer', fontSize: '1rem' }}>
-                    {saving ? 'Saving...' : 'Save Changes'}
+                <div style={{ marginTop: '1rem' }}>
+                  <button type="submit" disabled={saving} style={{ padding: '0.8rem 2rem', backgroundColor: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: '4px', cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: '1rem' }}>
+                    {saving ? 'Saving...' : 'Save Profile Changes'}
                   </button>
                 </div>
               </form>
@@ -338,50 +345,52 @@ const UserProfile = () => {
           {/* SECURITY TAB (Password, Sessions, Danger Zone) */}
           {activeTab === 'security' && (
             <>
-              <div style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                <h2 style={{ marginBottom: '1.5rem', color: '#333' }}>Change Password</h2>
+              {/* Password Reset */}
+              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '2rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)', border: '1px solid var(--border-color)' }}>
+                <h2 style={{ margin: '0 0 1.5rem 0', color: 'var(--text-primary)' }}>Change Password</h2>
                 <form onSubmit={handlePasswordChange} style={{ display: 'grid', gap: '1.2rem', maxWidth: '500px' }}>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>Current Password</label>
-                    <input type="password" value={passwordData.current_password} onChange={(e) => setPasswordData({...passwordData, current_password: e.target.value})} required style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }} />
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: 'var(--text-secondary)', fontSize: '0.9rem', textTransform: 'uppercase' }}>Current Password</label>
+                    <input type="password" value={passwordData.current_password} onChange={(e) => setPasswordData({...passwordData, current_password: e.target.value})} required style={{ width: '100%', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', outline: 'none' }} />
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>New Password</label>
-                    <input type="password" value={passwordData.new_password} onChange={(e) => setPasswordData({...passwordData, new_password: e.target.value})} required minLength={8} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }} />
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: 'var(--text-secondary)', fontSize: '0.9rem', textTransform: 'uppercase' }}>New Password</label>
+                    <input type="password" value={passwordData.new_password} onChange={(e) => setPasswordData({...passwordData, new_password: e.target.value})} required minLength={8} style={{ width: '100%', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', outline: 'none' }} placeholder="Minimum 8 characters" />
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>Confirm New Password</label>
-                    <input type="password" value={passwordData.confirm_password} onChange={(e) => setPasswordData({...passwordData, confirm_password: e.target.value})} required minLength={8} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }} />
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: 'var(--text-secondary)', fontSize: '0.9rem', textTransform: 'uppercase' }}>Confirm New Password</label>
+                    <input type="password" value={passwordData.confirm_password} onChange={(e) => setPasswordData({...passwordData, confirm_password: e.target.value})} required minLength={8} style={{ width: '100%', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', outline: 'none' }} />
                   </div>
                   <div style={{ marginTop: '0.5rem' }}>
-                    <button type="submit" disabled={saving} style={{ padding: '0.75rem 1.5rem', backgroundColor: '#2196F3', color: 'white', border: 'none', borderRadius: '4px', cursor: saving ? 'not-allowed' : 'pointer' }}>
+                    <button type="submit" disabled={saving} style={{ padding: '0.8rem 2rem', backgroundColor: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: '4px', cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}>
                       {saving ? 'Updating...' : 'Update Password'}
                     </button>
                   </div>
                 </form>
               </div>
 
-              <div style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+              {/* Active Sessions */}
+              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '2rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)', border: '1px solid var(--border-color)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                  <h2 style={{ margin: 0, color: '#333' }}>Active Sessions</h2>
+                  <h2 style={{ margin: 0, color: 'var(--text-primary)' }}>Active Sessions</h2>
                   {sessions.length > 1 && (
-                    <button onClick={handleRevokeAllSessions} style={{ padding: '0.5rem 1rem', backgroundColor: '#FF9800', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                    <button onClick={handleRevokeAllSessions} style={{ padding: '0.6rem 1.2rem', backgroundColor: 'transparent', color: '#FF9800', border: '1px solid #FF9800', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
                       Revoke All Other Sessions
                     </button>
                   )}
                 </div>
                 {sessions.length === 0 ? (
-                  <p style={{ color: '#666' }}>No active sessions found.</p>
+                  <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>No active sessions found.</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {sessions.map((session) => (
-                      <div key={session.id} style={{ padding: '1rem', border: '1px solid #ddd', borderRadius: '4px', backgroundColor: '#f9f9f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div key={session.id} style={{ padding: '1.2rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                          <div style={{ fontWeight: 'bold' }}>{session.ip_address || 'Unknown IP'}</div>
-                          <div style={{ fontSize: '0.85rem', color: '#666', marginTop: '0.25rem' }}>{session.user_agent || 'Unknown Device'}</div>
-                          <div style={{ fontSize: '0.85rem', color: '#999', marginTop: '0.25rem' }}>Started: {formatDate(session.created_at)}</div>
+                          <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: 'var(--text-primary)' }}>{session.ip_address || 'Unknown IP'}</div>
+                          <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>{session.user_agent || 'Unknown Device'}</div>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--accent-color)', marginTop: '0.4rem' }}>Started: {formatDate(session.created_at)}</div>
                         </div>
-                        <button onClick={() => handleRevokeSession(session.id)} style={{ padding: '0.5rem 1rem', backgroundColor: '#F44336', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                        <button onClick={() => handleRevokeSession(session.id)} style={{ padding: '0.6rem 1.2rem', backgroundColor: 'rgba(244, 67, 54, 0.1)', color: '#F44336', border: '1px solid rgba(244, 67, 54, 0.3)', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
                           Revoke
                         </button>
                       </div>
@@ -390,10 +399,11 @@ const UserProfile = () => {
                 )}
               </div>
 
-              <div style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', border: '2px solid #F44336' }}>
-                <h2 style={{ marginBottom: '1rem', color: '#F44336' }}>Danger Zone</h2>
-                <p style={{ color: '#666', marginBottom: '1.5rem' }}>Once you delete your account, there is no going back. Please be certain.</p>
-                <button onClick={handleDeleteAccount} style={{ padding: '0.75rem 1.5rem', backgroundColor: '#F44336', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '1rem' }}>
+              {/* Danger Zone */}
+              <div style={{ backgroundColor: 'rgba(244, 67, 54, 0.05)', padding: '2rem', borderRadius: '8px', border: '2px solid rgba(244, 67, 54, 0.5)' }}>
+                <h2 style={{ margin: '0 0 1rem 0', color: '#F44336' }}>Danger Zone</h2>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Once you delete your account, there is no going back. Please be certain.</p>
+                <button onClick={handleDeleteAccount} style={{ padding: '0.8rem 2rem', backgroundColor: '#F44336', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}>
                   Delete My Account
                 </button>
               </div>
@@ -403,20 +413,20 @@ const UserProfile = () => {
           {/* PREFERENCES TAB (UI + Dashboard) */}
           {activeTab === 'preferences' && settings && (
             <>
-              <div style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                <h2 style={{ marginBottom: '1.5rem', color: '#333' }}>UI Preferences</h2>
+              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '2rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)', border: '1px solid var(--border-color)' }}>
+                <h2 style={{ margin: '0 0 1.5rem 0', color: 'var(--text-primary)' }}>UI Preferences</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>Theme</label>
-                    <select value={settings.preferences?.theme || 'light'} onChange={(e) => handleSettingChange('preferences', 'theme', e.target.value)} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: 'var(--text-secondary)', fontSize: '0.9rem', textTransform: 'uppercase' }}>Theme</label>
+                    <select value={settings.preferences?.theme || 'light'} onChange={(e) => handleSettingChange('preferences', 'theme', e.target.value)} style={{ width: '100%', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', outline: 'none' }}>
                       <option value="light">Light</option>
                       <option value="dark">Dark</option>
                       <option value="auto">Auto (System Default)</option>
                     </select>
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>Language</label>
-                    <select value={settings.preferences?.language || 'en'} onChange={(e) => handleSettingChange('preferences', 'language', e.target.value)} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: 'var(--text-secondary)', fontSize: '0.9rem', textTransform: 'uppercase' }}>Language</label>
+                    <select value={settings.preferences?.language || 'en'} onChange={(e) => handleSettingChange('preferences', 'language', e.target.value)} style={{ width: '100%', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', outline: 'none' }}>
                       <option value="en">English</option>
                       <option value="es">Spanish</option>
                       <option value="fr">French</option>
@@ -424,51 +434,52 @@ const UserProfile = () => {
                     </select>
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>Time Format</label>
-                    <select value={settings.preferences?.time_format || '24h'} onChange={(e) => handleSettingChange('preferences', 'time_format', e.target.value)} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: 'var(--text-secondary)', fontSize: '0.9rem', textTransform: 'uppercase' }}>Time Format</label>
+                    <select value={settings.preferences?.time_format || '24h'} onChange={(e) => handleSettingChange('preferences', 'time_format', e.target.value)} style={{ width: '100%', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', outline: 'none' }}>
                       <option value="12h">12 Hour (AM/PM)</option>
                       <option value="24h">24 Hour</option>
                     </select>
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>Items Per Page</label>
-                    <input type="number" min="10" max="500" step="10" value={settings.preferences?.items_per_page || 50} onChange={(e) => handleSettingChange('preferences', 'items_per_page', parseInt(e.target.value))} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }} />
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: 'var(--text-secondary)', fontSize: '0.9rem', textTransform: 'uppercase' }}>Items Per Page</label>
+                    <input type="number" min="10" max="500" step="10" value={settings.preferences?.items_per_page || 50} onChange={(e) => handleSettingChange('preferences', 'items_per_page', parseInt(e.target.value))} style={{ width: '100%', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', outline: 'none' }} />
                   </div>
                 </div>
               </div>
 
-              <div style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                <h2 style={{ marginBottom: '1.5rem', color: '#333' }}>Dashboard Configuration</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
+              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '2rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)', border: '1px solid var(--border-color)' }}>
+                <h2 style={{ margin: '0 0 1.5rem 0', color: 'var(--text-primary)' }}>Dashboard Configuration</h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>Default View</label>
-                    <select value={settings.dashboard?.default_view || 'overview'} onChange={(e) => handleSettingChange('dashboard', 'default_view', e.target.value)} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: 'var(--text-secondary)', fontSize: '0.9rem', textTransform: 'uppercase' }}>Default View</label>
+                    <select value={settings.dashboard?.default_view || 'overview'} onChange={(e) => handleSettingChange('dashboard', 'default_view', e.target.value)} style={{ width: '100%', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', outline: 'none' }}>
                       <option value="overview">Overview</option>
                       <option value="logs">Logs</option>
                       <option value="alerts">Alerts</option>
                     </select>
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>Refresh Interval (Seconds)</label>
-                    <input type="number" min="5" max="300" value={settings.dashboard?.refresh_interval || 30} onChange={(e) => handleSettingChange('dashboard', 'refresh_interval', parseInt(e.target.value))} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }} />
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: 'var(--text-secondary)', fontSize: '0.9rem', textTransform: 'uppercase' }}>Refresh Interval (Sec)</label>
+                    <input type="number" min="5" max="300" value={settings.dashboard?.refresh_interval || 30} onChange={(e) => handleSettingChange('dashboard', 'refresh_interval', parseInt(e.target.value))} style={{ width: '100%', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', outline: 'none' }} />
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: '#333' }}>Default Chart Type</label>
-                    <select value={settings.dashboard?.chart_type || 'line'} onChange={(e) => handleSettingChange('dashboard', 'chart_type', e.target.value)} style={{ width: '100%', padding: '0.75rem', border: '1px solid #ddd', borderRadius: '4px' }}>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: 'var(--text-secondary)', fontSize: '0.9rem', textTransform: 'uppercase' }}>Default Chart Type</label>
+                    <select value={settings.dashboard?.chart_type || 'line'} onChange={(e) => handleSettingChange('dashboard', 'chart_type', e.target.value)} style={{ width: '100%', padding: '0.8rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', outline: 'none' }}>
                       <option value="line">Line</option>
                       <option value="bar">Bar</option>
                       <option value="pie">Pie</option>
                     </select>
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={settings.dashboard?.show_recent_activity || false} onChange={(e) => handleSettingChange('dashboard', 'show_recent_activity', e.target.checked)} style={{ transform: 'scale(1.2)' }}/>
-                    <span>Show Recent Activity Feed on Dashboard</span>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', padding: '1.5rem', backgroundColor: 'var(--bg-primary)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                    <input type="checkbox" checked={settings.dashboard?.show_recent_activity || false} onChange={(e) => handleSettingChange('dashboard', 'show_recent_activity', e.target.checked)} style={{ transform: 'scale(1.3)', accentColor: 'var(--accent-color)' }}/>
+                    <span style={{ fontWeight: 'bold' }}>Show Recent Activity Feed on Dashboard</span>
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={settings.dashboard?.show_statistics || false} onChange={(e) => handleSettingChange('dashboard', 'show_statistics', e.target.checked)} style={{ transform: 'scale(1.2)' }}/>
-                    <span>Show Statistics Cards on Dashboard</span>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                    <input type="checkbox" checked={settings.dashboard?.show_statistics || false} onChange={(e) => handleSettingChange('dashboard', 'show_statistics', e.target.checked)} style={{ transform: 'scale(1.3)', accentColor: 'var(--accent-color)' }}/>
+                    <span style={{ fontWeight: 'bold' }}>Show Statistics Cards on Dashboard</span>
                   </label>
                 </div>
               </div>
@@ -477,31 +488,32 @@ const UserProfile = () => {
 
           {/* NOTIFICATIONS TAB */}
           {activeTab === 'notifications' && settings && (
-            <div style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-               <h2 style={{ marginBottom: '1.5rem', color: '#333' }}>Alert & Notification Rules</h2>
+            <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '2rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)', border: '1px solid var(--border-color)' }}>
+               <h2 style={{ margin: '0 0 1.5rem 0', color: 'var(--text-primary)' }}>Alert & Notification Rules</h2>
                
-               <div style={{ marginBottom: '2rem' }}>
-                 <h3 style={{ marginBottom: '1rem', color: '#555', fontSize: '1.1rem' }}>Email Notifications</h3>
-                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem', backgroundColor: '#f9f9f9', borderRadius: '4px', border: '1px solid #eee' }}>
-                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
-                     <input type="checkbox" checked={settings.notifications?.email_notifications || false} onChange={(e) => handleSettingChange('notifications', 'email_notifications', e.target.checked)} style={{ transform: 'scale(1.2)' }}/> 
-                     <strong>Enable Global Email Notifications</strong>
+               <div style={{ marginBottom: '2.5rem' }}>
+                 <h3 style={{ margin: '0 0 1rem 0', color: 'var(--text-secondary)', fontSize: '1.1rem', textTransform: 'uppercase' }}>Email Notifications</h3>
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', padding: '1.5rem', backgroundColor: 'var(--bg-primary)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                   <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                     <input type="checkbox" checked={settings.notifications?.email_notifications || false} onChange={(e) => handleSettingChange('notifications', 'email_notifications', e.target.checked)} style={{ transform: 'scale(1.3)', accentColor: 'var(--accent-color)' }}/> 
+                     <strong style={{ fontSize: '1.1rem' }}>Enable Global Email Notifications</strong>
                    </label>
-                   <div style={{ marginLeft: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', opacity: settings.notifications?.email_notifications ? 1 : 0.5 }}>
-                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
-                       <input type="checkbox" checked={settings.notifications?.critical_alerts_only || false} onChange={(e) => handleSettingChange('notifications', 'critical_alerts_only', e.target.checked)} disabled={!settings.notifications?.email_notifications} /> 
+                   
+                   <div style={{ marginLeft: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', opacity: settings.notifications?.email_notifications ? 1 : 0.5, transition: 'opacity 0.2s' }}>
+                     <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                       <input type="checkbox" checked={settings.notifications?.critical_alerts_only || false} onChange={(e) => handleSettingChange('notifications', 'critical_alerts_only', e.target.checked)} disabled={!settings.notifications?.email_notifications} style={{ accentColor: 'var(--accent-color)' }}/> 
                        Send strictly for Critical alerts
                      </label>
-                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
-                       <input type="checkbox" checked={settings.notifications?.alert_notifications || false} onChange={(e) => handleSettingChange('notifications', 'alert_notifications', e.target.checked)} disabled={!settings.notifications?.email_notifications} /> 
+                     <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                       <input type="checkbox" checked={settings.notifications?.alert_notifications || false} onChange={(e) => handleSettingChange('notifications', 'alert_notifications', e.target.checked)} disabled={!settings.notifications?.email_notifications} style={{ accentColor: 'var(--accent-color)' }}/> 
                        General System Alerts
                      </label>
-                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
-                       <input type="checkbox" checked={settings.notifications?.ml_detection_notifications || false} onChange={(e) => handleSettingChange('notifications', 'ml_detection_notifications', e.target.checked)} disabled={!settings.notifications?.email_notifications} /> 
+                     <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                       <input type="checkbox" checked={settings.notifications?.ml_detection_notifications || false} onChange={(e) => handleSettingChange('notifications', 'ml_detection_notifications', e.target.checked)} disabled={!settings.notifications?.email_notifications} style={{ accentColor: 'var(--accent-color)' }}/> 
                        Machine Learning Detections
                      </label>
-                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
-                       <input type="checkbox" checked={settings.notifications?.suricata_notifications || false} onChange={(e) => handleSettingChange('notifications', 'suricata_notifications', e.target.checked)} disabled={!settings.notifications?.email_notifications} /> 
+                     <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                       <input type="checkbox" checked={settings.notifications?.suricata_notifications || false} onChange={(e) => handleSettingChange('notifications', 'suricata_notifications', e.target.checked)} disabled={!settings.notifications?.email_notifications} style={{ accentColor: 'var(--accent-color)' }}/> 
                        Suricata IDS Events
                      </label>
                    </div>
@@ -509,15 +521,15 @@ const UserProfile = () => {
                </div>
 
                <div>
-                 <h3 style={{ marginBottom: '1rem', color: '#555', fontSize: '1.1rem' }}>Desktop & Browser</h3>
-                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem', backgroundColor: '#f9f9f9', borderRadius: '4px', border: '1px solid #eee' }}>
-                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
-                     <input type="checkbox" checked={settings.notifications?.notification_desktop || false} onChange={(e) => handleSettingChange('notifications', 'notification_desktop', e.target.checked)} style={{ transform: 'scale(1.2)' }}/> 
-                     Enable visual desktop alerts
+                 <h3 style={{ margin: '0 0 1rem 0', color: 'var(--text-secondary)', fontSize: '1.1rem', textTransform: 'uppercase' }}>Desktop & Browser</h3>
+                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', padding: '1.5rem', backgroundColor: 'var(--bg-primary)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                   <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                     <input type="checkbox" checked={settings.notifications?.notification_desktop || false} onChange={(e) => handleSettingChange('notifications', 'notification_desktop', e.target.checked)} style={{ transform: 'scale(1.3)', accentColor: 'var(--accent-color)' }}/> 
+                     <span style={{ fontWeight: 'bold' }}>Enable visual desktop alerts</span>
                    </label>
-                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
-                     <input type="checkbox" checked={settings.notifications?.notification_sound || false} onChange={(e) => handleSettingChange('notifications', 'notification_sound', e.target.checked)} style={{ transform: 'scale(1.2)' }}/> 
-                     Play audio chime for critical events
+                   <label style={{ display: 'flex', alignItems: 'center', gap: '1rem', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                     <input type="checkbox" checked={settings.notifications?.notification_sound || false} onChange={(e) => handleSettingChange('notifications', 'notification_sound', e.target.checked)} style={{ transform: 'scale(1.3)', accentColor: 'var(--accent-color)' }}/> 
+                     <span style={{ fontWeight: 'bold' }}>Play audio chime for critical events</span>
                    </label>
                  </div>
                </div>
@@ -526,27 +538,27 @@ const UserProfile = () => {
 
           {/* ACTIVITY LOG TAB */}
           {activeTab === 'activity log' && (
-            <div style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-              <h2 style={{ marginBottom: '1.5rem', color: '#333' }}>Account Activity History</h2>
+            <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '2rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)', border: '1px solid var(--border-color)' }}>
+              <h2 style={{ margin: '0 0 1.5rem 0', color: 'var(--text-primary)' }}>Account Activity History</h2>
               
               {activitiesLoading ? (
-                <p>Loading activity log...</p>
+                <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading activity log...</div>
               ) : activities.length === 0 ? (
-                <p style={{ color: '#666' }}>No recent activities found.</p>
+                <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)', fontStyle: 'italic' }}>No recent activities found.</div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '600px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '600px', overflowY: 'auto', paddingRight: '0.5rem' }}>
                   {activities.map((activity) => (
-                    <div key={activity.id} style={{ padding: '1.2rem', border: '1px solid #eee', borderRadius: '4px', backgroundColor: '#fafafa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div key={activity.id} style={{ padding: '1.2rem', border: '1px solid var(--border-color)', borderRadius: '6px', backgroundColor: 'var(--bg-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <strong style={{ textTransform: 'capitalize', display: 'block', marginBottom: '0.4rem', fontSize: '1.05rem', color: '#2c3e50' }}>
+                        <strong style={{ textTransform: 'capitalize', display: 'block', marginBottom: '0.4rem', fontSize: '1.05rem', color: 'var(--text-primary)' }}>
                           {activity.activity_type.replace(/_/g, ' ')}
                         </strong>
-                        <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                           <span style={{ display: 'inline-block', minWidth: '120px' }}>IP: {activity.ip_address || 'Unknown'}</span>
                           <span>Browser: {activity.user_agent ? activity.user_agent.split(' ')[0] : 'Unknown'}</span>
                         </div>
                       </div>
-                      <div style={{ fontSize: '0.9rem', color: '#888', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '0.9rem', color: 'var(--accent-color)', textAlign: 'right', whiteSpace: 'nowrap', fontWeight: 'bold' }}>
                         {formatDate(activity.timestamp)}
                       </div>
                     </div>
@@ -556,37 +568,35 @@ const UserProfile = () => {
             </div>
           )}
 
-          {/* SYSTEM ADMIN TAB */}
+          {/* SYSTEM ADMIN TAB (Redirects to Manage Analysts visual style) */}
           {activeTab === 'system admin' && profile.role === 'admin' && (
-            <div style={{ backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-              <h2 style={{ marginBottom: '1.5rem', color: '#333' }}>Manage Analysts & Users</h2>
+            <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '2rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)', border: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h2 style={{ margin: 0, color: 'var(--text-primary)' }}>Manage Analysts & Users</h2>
+                <button onClick={() => navigate('/admin/users')} style={{ padding: '0.5rem 1rem', backgroundColor: 'transparent', color: 'var(--accent-color)', border: '1px solid var(--accent-color)', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                  Advanced Management →
+                </button>
+              </div>
+              
               {usersLoading ? (
-                <p>Loading user database...</p>
+                <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading user database...</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {allUsers.map(user => (
-                    <div key={user.id} style={{ padding: '1.2rem', border: '1px solid #ddd', borderRadius: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: user.is_active ? '#fff' : '#fefefe', opacity: user.is_active ? 1 : 0.7 }}>
+                  {allUsers.slice(0, 5).map(user => (
+                    <div key={user.id} style={{ padding: '1.2rem', border: '1px solid var(--border-color)', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-primary)', opacity: user.is_active ? 1 : 0.6 }}>
                       <div>
-                        <div style={{ fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '0.2rem' }}>{user.full_name}</div>
-                        <div style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.4rem' }}>{user.email} • Role: {user.role}</div>
-                        <div style={{ fontSize: '0.8rem', padding: '2px 6px', borderRadius: '4px', display: 'inline-block', backgroundColor: user.is_active ? '#e8f5e9' : '#ffebee', color: user.is_active ? '#2e7d32' : '#c62828' }}>
-                          Status: {user.is_active ? 'Active' : 'Deactivated'}
+                        <div style={{ fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '0.2rem', color: 'var(--text-primary)' }}>{user.full_name}</div>
+                        <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>{user.email} • Role: <span style={{ textTransform: 'capitalize' }}>{user.role}</span></div>
+                        <div style={{ fontSize: '0.8rem', padding: '2px 8px', borderRadius: '12px', display: 'inline-block', backgroundColor: user.is_active ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)', color: user.is_active ? '#4CAF50' : '#F44336', border: `1px solid ${user.is_active ? '#4CAF50' : '#F44336'}50`, fontWeight: 'bold' }}>
+                          Status: {user.is_active ? 'Active' : 'Suspended'}
                         </div>
                       </div>
                       {user.id !== authService.getStoredUser()?.id && (
                         <button
                           onClick={() => handleToggleUserStatus(user)}
-                          style={{
-                            padding: '0.6rem 1.2rem',
-                            backgroundColor: user.is_active ? '#F44336' : '#4CAF50',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold'
-                          }}
+                          style={{ padding: '0.6rem 1.2rem', backgroundColor: user.is_active ? 'transparent' : '#4CAF50', color: user.is_active ? '#F44336' : '#fff', border: `1px solid ${user.is_active ? '#F44336' : '#4CAF50'}`, borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
                         >
-                          {user.is_active ? 'Deactivate Account' : 'Reactivate Account'}
+                          {user.is_active ? 'Suspend Access' : 'Restore Access'}
                         </button>
                       )}
                     </div>
@@ -600,24 +610,26 @@ const UserProfile = () => {
 
         {/* ===================== RIGHT COLUMN: ACCOUNT STATS ===================== */}
         <div>
-          <div style={{ backgroundColor: '#fff', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', position: 'sticky', top: '2rem' }}>
-            <h3 style={{ marginBottom: '1.2rem', borderBottom: '1px solid #eee', paddingBottom: '0.8rem', color: '#333' }}>Account Snapshot</h3>
-            <div style={{ display: 'grid', gap: '1rem', fontSize: '0.95rem' }}>
+          <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '2rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)', border: '1px solid var(--border-color)', position: 'sticky', top: '2rem' }}>
+            <h3 style={{ margin: '0 0 1.5rem 0', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>📊</span> Account Snapshot
+            </h3>
+            <div style={{ display: 'grid', gap: '1.2rem', fontSize: '0.95rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#666' }}>Member Since</span>
-                <strong style={{ color: '#333' }}>{profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}</strong>
+                <span style={{ color: 'var(--text-secondary)' }}>Member Since</span>
+                <strong style={{ color: 'var(--text-primary)' }}>{profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#666' }}>Last Profile Update</span>
-                <strong style={{ color: '#333' }}>{profile.updated_at ? new Date(profile.updated_at).toLocaleDateString() : 'N/A'}</strong>
+                <span style={{ color: 'var(--text-secondary)' }}>Last Profile Update</span>
+                <strong style={{ color: 'var(--text-primary)' }}>{profile.updated_at ? new Date(profile.updated_at).toLocaleDateString() : 'N/A'}</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#666' }}>Concurrent Sessions</span>
-                <strong style={{ color: '#2196F3', fontSize: '1.1rem' }}>{sessions.length}</strong>
+                <span style={{ color: 'var(--text-secondary)' }}>Concurrent Sessions</span>
+                <strong style={{ color: 'var(--accent-color)', fontSize: '1.2rem' }}>{sessions.length}</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#666' }}>System Role</span>
-                <strong style={{ color: profile.role === 'admin' ? '#e74c3c' : '#333', textTransform: 'capitalize' }}>{profile.role}</strong>
+                <span style={{ color: 'var(--text-secondary)' }}>System Role</span>
+                <strong style={{ color: profile.role === 'admin' ? '#9C27B0' : 'var(--text-primary)', textTransform: 'uppercase' }}>{profile.role}</strong>
               </div>
             </div>
           </div>

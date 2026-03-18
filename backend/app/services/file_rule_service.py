@@ -2,14 +2,12 @@
 File-based Suricata rule management service with atomic writes and concurrency safety.
 """
 import os
-import tempfile
 import shutil
 import asyncio
 import glob
 from typing import List, Optional, Dict, Any, Tuple
 from datetime import datetime
-from pathlib import Path
-from bson import ObjectId  # --- FIXED: Added missing import ---
+from bson import ObjectId
 
 from app.config import settings
 from app.utils.rule_validator import validate_suricata_rule, extract_rule_metadata, format_rule_for_file
@@ -27,7 +25,7 @@ def get_rules_file_path() -> str:
     return settings.SURICATA_RULES_PATH
 
 
-# --- NEW: Backup Logic ---
+# --- Backup Logic ---
 
 async def backup_rules_file() -> str:
     """Create a timestamped backup of the current rules file."""
@@ -107,7 +105,8 @@ async def read_backup_file(backup_filename: str) -> List[str]:
         with open(backup_path, 'r', encoding='utf-8') as f:
             return f.readlines()
 
-# --- NEW: Duplicate Check ---
+
+# --- Duplicate Check ---
 async def check_duplicate_rule_name(rule_name: str, current_lines: List[str]) -> bool:
     """Check if a rule name already exists in the file."""
     if not rule_name:
@@ -160,14 +159,23 @@ async def append_rule_to_file(
         formatted_rule = format_rule_for_file(rule_content, rule_name, rule_id)
         final_block = metadata_comment + formatted_rule
 
-        # 5. Atomic Write
+        # 5. Atomic Write with Windows Fallback
         temp_file = file_path + '.tmp'
         try:
             with open(temp_file, 'w', encoding='utf-8') as f:
                 f.writelines(current_lines)
                 f.write(final_block)
             
-            shutil.move(temp_file, file_path)
+            try:
+                # Primary attempt: atomic replace
+                os.replace(temp_file, file_path)
+            except PermissionError:
+                # Windows Fallback: If Suricata holds a read-lock, do an in-place overwrite
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.writelines(current_lines)
+                    f.write(final_block)
+                if os.path.exists(temp_file):
+                    os.remove(temp_file)
             
             # 6. Logging
             await log_rule_history(
@@ -246,12 +254,19 @@ async def update_rule_in_file(
             if len(new_lines) > 1:
                 lines.insert(line_number, '\n')
         
+        # Write with Windows Fallback
         temp_file = file_path + '.tmp'
         try:
             with open(temp_file, 'w', encoding='utf-8') as f:
                 f.writelines(lines)
             
-            shutil.move(temp_file, file_path)
+            try:
+                os.replace(temp_file, file_path)
+            except PermissionError:
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.writelines(lines)
+                if os.path.exists(temp_file):
+                    os.remove(temp_file)
             
             await log_rule_history(
                 rule_id=rule_id,
@@ -287,26 +302,33 @@ async def process_uploaded_rules(content: str, filename: str, user_id: str) -> D
     await backup_rules_file()
 
     try:
-        for line in lines:
+        for idx, line in enumerate(lines):
             line = line.strip()
             if not line or line.startswith('#'):
                 continue
             
             is_valid, err, _ = validate_suricata_rule(line)
             if is_valid:
+                # Extract the rule's SID to guarantee a unique name instead of just the filename
+                metadata = extract_rule_metadata(line)
+                sid = metadata.get('sid', f"line-{idx}")
+                
                 try:
                     await append_rule_to_file(
                         rule_content=line,
-                        rule_name=f"Imported from {filename}",
+                        rule_name=f"Imported Rule SID {sid}",
                         user_id=user_id,
                         severity="medium"
                     )
                     processed_count += 1
                 except ValueError as e:
-                    errors.append(f"Duplicate/Error: {str(e)}")
+                    errors.append(f"Skipped duplicate: SID {sid}")
+                    skipped_count += 1
+                except Exception as e:
+                    errors.append(f"System Error on SID {sid}: {str(e)}")
                     skipped_count += 1
             else:
-                errors.append(f"Invalid rule: {line[:50]}... ({err})")
+                errors.append(f"Invalid rule format: {line[:40]}... ({err})")
                 skipped_count += 1
                 
         await create_log(
@@ -320,20 +342,18 @@ async def process_uploaded_rules(content: str, filename: str, user_id: str) -> D
         return {
             "processed_count": processed_count,
             "skipped_count": skipped_count,
-            "errors": errors[:10]
+            "errors": errors[:15]
         }
         
     except Exception as e:
-        raise Exception(f"Bulk processing failed: {str(e)}")
+        raise Exception(f"Bulk processing failed entirely: {str(e)}")
 
 
 async def get_recent_rules_from_file(limit: int = 5) -> List[Dict[str, Any]]:
-    # ... (Keep existing implementation)
     return await _existing_get_recent_rules(limit)
 
 
 async def search_rules_in_file(query: str, case_sensitive: bool = False) -> List[Dict[str, Any]]:
-    # ... (Keep existing implementation)
     return await _existing_search_rules(query, case_sensitive)
 
 
@@ -350,7 +370,7 @@ async def log_rule_history(
     db = get_database()
     
     history_doc = {
-        "_id": ObjectId(),  # <--- FIXED: Now defined
+        "_id": ObjectId(),
         "rule_id": rule_id,
         "rule_content": rule_content,
         "action": action,
@@ -364,7 +384,7 @@ async def log_rule_history(
     await db.rule_history.insert_one(history_doc)
 
 
-# Helpers (Internal)
+# --- Helpers (Internal) ---
 async def _existing_get_recent_rules(limit: int):
     lines, _ = await read_rules_file()
     rules = []
