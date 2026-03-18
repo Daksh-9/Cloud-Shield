@@ -12,7 +12,6 @@ import EventTimeline from './pages/EventTimeline'
 import MLDetection from './pages/MLDetection'
 import MLDataInput from './pages/MLDataInput'
 import MLFeatureExtraction from './pages/MLFeatureExtraction'
-import Settings from './pages/Settings'
 import UserProfile from './pages/UserProfile'
 import Notifications from './pages/Notifications'
 import ManageAnalysts from './pages/ManageAnalysts'
@@ -51,10 +50,8 @@ function App() {
         <Route path="/suricata/rules" element={<SuricataRules />} />
         <Route path="/suricata/upload" element={<SuricataUpload />} />
         <Route path="/suricata/logs" element={<SuricataLogs />} />
-        {/* REMOVED: /suricata/config as it is now in SuricataRules */}
         
         {/* System & Admin Routes */}
-        <Route path="/settings" element={<Settings />} />
         <Route path="/profile" element={<UserProfile />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/admin/users" element={<ManageAnalysts />} />

@@ -1,10 +1,27 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+// IMPORT useSearchParams to read the URL query
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const SuricataLogs = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  // STATE: Initialize the search term from the URL if it exists
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
 
-  // Navigation Tabs
+  // Keep the state in sync if the URL changes while already on the page
+  useEffect(() => {
+    const search = searchParams.get('search');
+    if (search !== null) {
+      setSearchTerm(search);
+    }
+  }, [searchParams]);
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    // You could also update the URL here to make the search shareable
+  };
+
   const NavTabs = () => (
     <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid var(--border-color)' }}>
       <button onClick={() => navigate('/suricata/rules')} style={{ padding: '1rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}>Rules Management</button>
@@ -42,7 +59,14 @@ const SuricataLogs = () => {
       {/* Controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <input type="text" placeholder="Search logs..." style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', width: '300px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+          {/* UPDATED: Search input is now controlled by the state */}
+          <input 
+            type="text" 
+            placeholder="Search logs..." 
+            value={searchTerm}
+            onChange={handleSearchChange}
+            style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border-color)', width: '300px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }} 
+          />
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <span style={{ padding: '0.25rem 0.5rem', backgroundColor: '#F44336', color: 'white', borderRadius: '4px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>Severity: High <button style={{ border: 'none', background: 'none', color: 'white', cursor: 'pointer' }}>✕</button></span>
             <span style={{ padding: '0.25rem 0.5rem', backgroundColor: 'var(--accent-color)', color: 'white', borderRadius: '4px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>Category: DDoS <button style={{ border: 'none', background: 'none', color: 'white', cursor: 'pointer' }}>✕</button></span>
@@ -72,6 +96,7 @@ const SuricataLogs = () => {
             </tr>
           </thead>
           <tbody>
+            {/* The actual filtering of this mock data would happen here or via a backend call */}
             {[
               {
                 time: '14:35:23', sid: '2100498', sev: 'CRITICAL', color: '#F44336',

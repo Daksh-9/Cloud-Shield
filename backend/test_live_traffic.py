@@ -24,6 +24,8 @@ TIERED_IPS = {
 }
 
 PROTOCOLS = ["TCP", "UDP", "ICMP", "HTTP", "DNS"]
+# Add standard ports so the new Bar Chart displays realistic data
+PORTS = [80, 443, 22, 53, 3389, 8080]
 
 def get_bytes_for_tier(tier):
     """Generates byte sizes based on the assigned traffic tier."""
@@ -39,16 +41,20 @@ def get_bytes_for_tier(tier):
 
 def generate_fake_flow():
     """Generates a payload exactly matching what Suricata produces."""
-    # Pick a random IP from our tiered list
     src_ip = random.choice(list(TIERED_IPS.keys()))
     tier = TIERED_IPS[src_ip]
     
+    # FIX: Ensure timestamp ends with "Z" instead of "+00:00" 
+    # so MongoDB string comparison ($gte) works perfectly with the new backend filter.
+    iso_time = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    
     return {
         "event_type": "flow",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": iso_time,
         "proto": random.choice(PROTOCOLS),
         "src_ip": src_ip,
         "dest_ip": "192.168.1.100", 
+        "dest_port": random.choice(PORTS), # FIX: Added dest_port for the new graph
         "flow": {
             "bytes_toserver": get_bytes_for_tier(tier), 
             "bytes_toclient": get_bytes_for_tier(tier)
@@ -74,7 +80,6 @@ def main():
                     proto = payload['proto']
                     tier = TIERED_IPS[ip].upper()
                     
-                    # Add color to the console output for fun!
                     print(f"✅ [{tier}] Sent flow: {ip:<15} via {proto:<5} ({mb_sent:.2f} MB)")
                 else:
                     print(f"⚠️ API Error: {response.status_code} - {response.text}")

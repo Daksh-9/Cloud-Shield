@@ -242,6 +242,22 @@ async def get_backups(current_user: dict = Depends(get_current_user)):
     verify_admin_access(current_user)
     return await list_rule_backups()
 
+@router.get("/backups/{backup_id}/view")
+async def view_backup(
+    backup_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """View the contents of a specific backup file for diff comparison."""
+    verify_admin_access(current_user)
+    
+    from app.services.file_rule_service import read_backup_file
+    try:
+        lines = await read_backup_file(backup_id)
+        return {"lines": lines}
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Backup not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/restore/{backup_id}")
 async def restore_backup(

@@ -65,6 +65,8 @@ class UserProfileUpdate(BaseModel):
     """Schema for updating user profile."""
     full_name: Optional[str] = Field(None, min_length=1, max_length=100)
     email: Optional[EmailStr] = None
+    phone: Optional[str] = Field(None, max_length=20, description="User phone number")
+    department: Optional[str] = Field(None, max_length=100, description="User department")
 
 
 class PasswordChange(BaseModel):

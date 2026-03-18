@@ -110,20 +110,11 @@ function TopBar({ user, onToggleSidebar, onToggleTheme, isDarkMode }) {
           )}
         </div>
 
-        {/* Settings Icon */}
-        <div 
-          style={{ cursor: 'pointer', fontSize: '1.2rem' }}
-          onClick={() => navigate('/settings')}
-          title="Settings"
-        >
-          ⚙️
-        </div>
-
-        {/* Profile Avatar */}
+        {/* Profile Avatar (Combined Hub) */}
         <div 
           style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
           onClick={() => navigate('/profile')}
-          title="User Profile"
+          title="User Profile & Settings"
         >
           <div style={{ 
             width: '32px', 

@@ -1,23 +1,33 @@
 """
-User profile and settings routes.
+User profile, settings, and session management routes.
 """
 from typing import Optional, List
-from fastapi import APIRouter, HTTPException, status, Depends, Request, Query
+from fastapi import APIRouter, HTTPException, status, Depends, Request
 from bson import ObjectId
 
 from app.models.user import UserResponse
-from app.models.user_settings import UserProfileUpdate, PasswordChange
+from app.models.user_settings import UserProfileUpdate, PasswordChange, UserSettingsUpdate
 from app.services.user_service import (
     update_user_profile,
     change_user_password,
     get_user_by_id
 )
-from app.services.user_settings_service import log_user_activity
+from app.services.user_settings_service import (
+    log_user_activity,
+    get_user_settings,
+    update_user_settings,
+    get_user_activities,
+    get_user_sessions,
+    revoke_user_session,
+    revoke_all_user_sessions
+)
 from app.middleware.auth import get_current_user, get_admin_user
 from app.database.connection import get_database
 
 router = APIRouter(prefix="/user", tags=["user"])
 
+
+# --- PROFILE & SECURITY ---
 
 @router.get("/profile", response_model=dict)
 async def get_profile(current_user: dict = Depends(get_current_user)):
@@ -98,6 +108,67 @@ async def change_password(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.delete("/account")
+async def delete_account(current_user: dict = Depends(get_current_user)):
+    """Delete the current user's account."""
+    db = get_database()
+    await db.users.delete_one({"_id": ObjectId(current_user["id"])})
+    # Clean up associated data
+    await db.user_settings.delete_one({"user_id": current_user["id"]})
+    await db.user_sessions.delete_many({"user_id": current_user["id"]})
+    return {"status": "success", "message": "Account deleted successfully"}
+
+
+# --- SETTINGS, SESSIONS, AND ACTIVITIES ---
+
+@router.get("/settings")
+async def read_user_settings(current_user: dict = Depends(get_current_user)):
+    """Get user notification and UI settings."""
+    return await get_user_settings(current_user["id"])
+
+
+@router.patch("/settings")
+async def modify_user_settings(
+    settings_update: UserSettingsUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update user settings."""
+    return await update_user_settings(current_user["id"], settings_update)
+
+
+@router.get("/activities")
+async def read_user_activities(
+    limit: int = 50, 
+    skip: int = 0, 
+    activity_type: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get user activity logs."""
+    return await get_user_activities(current_user["id"], limit, skip, activity_type)
+
+
+@router.get("/sessions")
+async def read_user_sessions(current_user: dict = Depends(get_current_user)):
+    """Get all active sessions for the user."""
+    return await get_user_sessions(current_user["id"])
+
+
+@router.delete("/sessions/{session_id}")
+async def delete_user_session(session_id: str, current_user: dict = Depends(get_current_user)):
+    """Revoke a specific session."""
+    success = await revoke_user_session(session_id, current_user["id"])
+    if not success:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"status": "success", "message": "Session revoked"}
+
+
+@router.post("/sessions/revoke-all")
+async def revoke_all_sessions(current_user: dict = Depends(get_current_user)):
+    """Revoke all sessions for the user."""
+    count = await revoke_all_user_sessions(current_user["id"])
+    return {"status": "success", "revoked_count": count}
+
+
 # --- ADMIN ONLY ROUTES ---
 
 @router.get("/all", response_model=List[UserResponse])
@@ -110,8 +181,16 @@ async def get_all_users(
     db = get_database()
     cursor = db.users.find({}).skip(skip).limit(limit)
     users = await cursor.to_list(length=limit)
-    # Convert _id to string id for response model
-    return [{"id": str(u["_id"]), **u} for u in users]
+    
+    # Convert _id to string and provide fallback for missing 'is_active' field in legacy accounts
+    return [
+        {
+            "id": str(u["_id"]),
+            "is_active": u.get("is_active", True), 
+            **u
+        } 
+        for u in users
+    ]
 
 
 @router.delete("/{user_id}/deactivate")

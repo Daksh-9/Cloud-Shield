@@ -60,6 +60,12 @@ export const suricataService = {
     return response.data;
   },
 
+  // Add this  under the Backup section:
+  async viewBackupFile(backupId) {
+    const response = await api.get(`/suricata/rules/backups/${backupId}/view`);
+    return response.data;
+  },
+
   // --- File View ---
 
   async viewRulesFile(search, caseSensitive = false) {

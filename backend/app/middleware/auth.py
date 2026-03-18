@@ -6,6 +6,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from app.utils.jwt import verify_token
 from app.services.log_service import create_log
+from app.services.user_service import get_user_by_id
 
 # This tells FastAPI that the token comes from the "Authorization: Bearer <token>" header
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -59,19 +60,26 @@ async def get_admin_user(
     current_user: dict = Depends(get_current_active_user)
 ) -> dict:
     """
-    Middleware to ensure the user has ADMIN privileges.
+    Middleware to ensure the user has ADMIN privileges by checking the database directly.
     """
-    if current_user.get("role") != "admin":
+    # Fetch the fresh user from the database to ensure roles are up to date
+    db_user = await get_user_by_id(current_user["id"])
+    
+    if not db_user or db_user.get("role") != "admin":
         # Log privilege escalation attempt
         await create_log(
             source="auth_middleware",
             log_type="security",
             severity="warning",
             message=f"Unauthorized Admin access attempt: {current_user.get('email')}",
-            metadata={"user_id": current_user.get("id"), "role": current_user.get("role")}
+            metadata={"user_id": current_user.get("id")}
         )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="The user doesn't have enough privileges"
         )
+        
+    # Update the current_user dict with the verified database role just in case
+    current_user["role"] = db_user.get("role")
+    
     return current_user

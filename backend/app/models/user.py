@@ -46,6 +46,8 @@ class UserBase(BaseModel):
     email: EmailStr
     full_name: str = Field(..., min_length=1, max_length=100)
     role: str = Field(default="analyst", description="User role: admin or analyst")
+    phone: Optional[str] = Field(None, description="User phone number")
+    department: Optional[str] = Field(None, description="User department")
 
 class UserCreate(UserBase):
     """Schema for user registration including encryption metadata."""
@@ -84,7 +86,9 @@ class UserInDB:
         key_salt: str, 
         encrypted_master_key: str,
         role: str = "analyst",
-        is_active: bool = True
+        is_active: bool = True,
+        phone: Optional[str] = None,
+        department: Optional[str] = None
     ):
         self.email = email
         self.full_name = full_name
@@ -93,6 +97,8 @@ class UserInDB:
         self.encrypted_master_key = encrypted_master_key
         self.role = role
         self.is_active = is_active
+        self.phone = phone
+        self.department = department
         self.failed_login_attempts = 0
         self.last_login = None
         self.created_at = datetime.utcnow()
@@ -107,6 +113,8 @@ class UserInDB:
             "encrypted_master_key": self.encrypted_master_key,
             "role": self.role,
             "is_active": self.is_active,
+            "phone": self.phone,
+            "department": self.department,
             "failed_login_attempts": self.failed_login_attempts,
             "last_login": self.last_login,
             "created_at": self.created_at,

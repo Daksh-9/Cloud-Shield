@@ -1,7 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { suricataService } from '../services/suricata';
 import { authService } from '../services/auth';
+
+// --- Pre-defined Rule Templates ---
+const RULE_TEMPLATES = [
+  { id: '', label: '-- Select a Rule Template --', content: '', name: '', severity: 'medium' },
+  { id: 'sql_inj', label: 'Detect SQL Injection', content: 'alert tcp $EXTERNAL_NET any -> $HTTP_SERVERS $HTTP_PORTS (msg:"SQL Injection Attempt"; flow:established,to_server; content:"UNION SELECT"; nocase; sid:1000001; rev:1;)', name: 'SQL Injection', severity: 'high' },
+  { id: 'ssh_brute', label: 'Detect SSH Brute Force', content: 'alert tcp $EXTERNAL_NET any -> $HOME_NET 22 (msg:"Possible SSH Brute Force"; flow:established,to_server; content:"SSH-"; threshold:type limit, track by_src, count 5, seconds 60; sid:1000002; rev:1;)', name: 'SSH Brute Force', severity: 'medium' },
+  { id: 'malware_c2', label: 'Detect Malware C2 Beacon', content: 'alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"Malware C2 Beaconing"; flow:established,to_server; http.method; content:"POST"; http.uri; content:"/login/process.php"; sid:1000003; rev:1;)', name: 'Malware Beacon', severity: 'zero_trust' },
+  { id: 'ping_sweep', label: 'Detect ICMP Ping Sweep', content: 'alert icmp $EXTERNAL_NET any -> $HOME_NET any (msg:"ICMP Ping Sweep Detected"; dsize:0; itype:8; threshold:type both, track by_src, count 10, seconds 10; sid:1000004; rev:1;)', name: 'Ping Sweep', severity: 'low' }
+];
 
 const SuricataRules = () => {
   const navigate = useNavigate();
@@ -33,6 +42,10 @@ const SuricataRules = () => {
   const [backups, setBackups] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFileMetadata, setActiveFileMetadata] = useState(null);
+
+  // --- Diff View State ---
+  const [diffModalOpen, setDiffModalOpen] = useState(false);
+  const [diffData, setDiffData] = useState({ backupId: '', backupContent: [], currentContent: [] });
 
   // --- Initialization ---
   useEffect(() => {
@@ -90,6 +103,19 @@ const SuricataRules = () => {
     }
   };
 
+  // --- Template Selection Handler ---
+  const handleTemplateSelect = (e) => {
+    const templateId = e.target.value;
+    const template = RULE_TEMPLATES.find(t => t.id === templateId);
+    if (template) {
+      setCreateRuleData({
+        content: template.content,
+        name: template.name,
+        severity: template.severity
+      });
+    }
+  };
+
   const handleCreateRule = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -104,6 +130,9 @@ const SuricataRules = () => {
       );
       setSuccess(`Rule created successfully at line ${result.line_number}. Remember to Push Changes to Live!`);
       setCreateRuleData({ content: '', name: '', severity: 'medium' });
+      
+      const templateSelect = document.getElementById("template-select");
+      if (templateSelect) templateSelect.value = ""; // Reset template dropdown
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to create rule.');
     } finally {
@@ -146,8 +175,29 @@ const SuricataRules = () => {
       await suricataService.restoreBackup(backupId);
       setSuccess(`Restored backup: ${backupId}. Remember to Push Changes to Live!`);
       await loadFileContent();
+      setDiffModalOpen(false); // Close diff modal if it was open
     } catch (err) {
       setError("Failed to restore backup.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- Diff View Handler ---
+  const handleViewDiff = async (backupId) => {
+    setLoading(true);
+    try {
+      const backupData = await suricataService.viewBackupFile(backupId);
+      const currentData = await suricataService.viewRulesFile(''); // Get un-searched current file
+      
+      setDiffData({
+        backupId: backupId,
+        backupContent: backupData.lines || [],
+        currentContent: currentData.lines || []
+      });
+      setDiffModalOpen(true);
+    } catch (err) {
+      setError("Failed to load diff comparison data.");
     } finally {
       setLoading(false);
     }
@@ -297,6 +347,14 @@ const SuricataRules = () => {
       {activeTab === 'create' && (
         <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '2rem', borderRadius: '8px', boxShadow: 'var(--card-shadow)' }}>
           <h2 style={{ marginBottom: '1.5rem' }}>Create New Rule</h2>
+
+          <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--bg-primary)', borderRadius: '6px', border: '1px dashed var(--border-color)' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', color: 'var(--accent-color)' }}>Start from a Template (Optional)</label>
+            <select id="template-select" onChange={handleTemplateSelect} style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+              {RULE_TEMPLATES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+            </select>
+          </div>
+
           <form onSubmit={handleCreateRule}>
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
               <div>
@@ -492,12 +550,20 @@ const SuricataRules = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>{(bk.size / 1024).toFixed(1)} KB</span>
                       {isAdmin && (
-                        <button 
-                          onClick={() => handleRestore(bk.filename)}
-                          style={{ padding: '2px 8px', backgroundColor: '#FF9800', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
-                        >
-                          Restore
-                        </button>
+                        <div style={{ display: 'flex', gap: '0.25rem' }}>
+                          <button 
+                            onClick={() => handleViewDiff(bk.filename)}
+                            style={{ padding: '2px 8px', backgroundColor: 'var(--text-secondary)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
+                          >
+                            Diff
+                          </button>
+                          <button 
+                            onClick={() => handleRestore(bk.filename)}
+                            style={{ padding: '2px 8px', backgroundColor: '#FF9800', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
+                          >
+                            Restore
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -646,6 +712,59 @@ outputs:
             </div>
           </div>
 
+        </div>
+      )}
+
+      {/* ==================== DIFF VIEW MODAL ==================== */}
+      {diffModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ backgroundColor: 'var(--bg-secondary)', width: '90%', height: '90%', borderRadius: '8px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            
+            <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ margin: 0 }}>Diff View: {diffData.backupId} vs Current</h2>
+              <button onClick={() => setDiffModalOpen(false)} style={{ padding: '0.5rem 1rem', background: '#F44336', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Close Modal</button>
+            </div>
+
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+              {/* Left Side: Backup File */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1px solid var(--border-color)' }}>
+                <div style={{ padding: '0.5rem', backgroundColor: 'var(--bg-primary)', textAlign: 'center', fontWeight: 'bold', color: '#FF9800' }}>Backup File</div>
+                <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', fontFamily: 'monospace', fontSize: '0.85rem', whiteSpace: 'pre-wrap' }}>
+                  {diffData.backupContent.map((line, i) => {
+                    const existsInCurrent = diffData.currentContent.includes(line);
+                    return (
+                      <div key={i} style={{ backgroundColor: existsInCurrent ? 'transparent' : 'rgba(244, 67, 54, 0.2)', color: existsInCurrent ? 'var(--text-primary)' : '#ff8a80' }}>
+                        {line}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Right Side: Current File */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ padding: '0.5rem', backgroundColor: 'var(--bg-primary)', textAlign: 'center', fontWeight: 'bold', color: '#4CAF50' }}>Current File</div>
+                <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', fontFamily: 'monospace', fontSize: '0.85rem', whiteSpace: 'pre-wrap' }}>
+                  {diffData.currentContent.map((line, i) => {
+                    const existsInBackup = diffData.backupContent.includes(line);
+                    return (
+                      <div key={i} style={{ backgroundColor: existsInBackup ? 'transparent' : 'rgba(76, 175, 80, 0.2)', color: existsInBackup ? 'var(--text-primary)' : '#b9f6ca' }}>
+                        {line}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+            
+            <div style={{ padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                <button onClick={() => setDiffModalOpen(false)} style={{ padding: '0.75rem 1.5rem', background: 'var(--bg-primary)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                {isAdmin && (
+                  <button onClick={() => handleRestore(diffData.backupId)} style={{ padding: '0.75rem 1.5rem', background: '#FF9800', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Restore This Backup</button>
+                )}
+            </div>
+
+          </div>
         </div>
       )}
 

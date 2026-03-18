@@ -96,7 +96,16 @@ async def read_rules_file() -> Tuple[List[str], Dict[str, Any]]:
             "file_size": file_stat.st_size,
             "modified": datetime.fromtimestamp(file_stat.st_mtime).isoformat()
         }
-
+        
+async def read_backup_file(backup_filename: str) -> List[str]:
+    """Read the contents of a specific backup file for diffing."""
+    backup_path = os.path.join(BACKUP_DIR, backup_filename)
+    if not os.path.exists(backup_path):
+        raise FileNotFoundError(f"Backup {backup_filename} not found")
+        
+    async with _rule_file_lock:
+        with open(backup_path, 'r', encoding='utf-8') as f:
+            return f.readlines()
 
 # --- NEW: Duplicate Check ---
 async def check_duplicate_rule_name(rule_name: str, current_lines: List[str]) -> bool:
