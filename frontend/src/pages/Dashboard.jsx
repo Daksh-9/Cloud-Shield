@@ -26,8 +26,9 @@ const Dashboard = () => {
     title: alert.title || alert.message || alert.alert_type || 'Unknown Alert',
     severity: (alert.severity || 'Info').toLowerCase(),
     status: alert.status || 'open',
-    src: alert.src_ip || 'Unknown',
-    dest: alert.dest_ip || 'Unknown'
+    // 🟢 FIX: Check root (for WebSocket) OR metadata (for REST API load)
+    src: alert.src_ip || alert.metadata?.src_ip || 'Unknown',
+    dest: alert.dest_ip || alert.metadata?.dest_ip || 'Unknown'
   });
 
   const standardLog = (log) => ({

@@ -277,6 +277,20 @@ function Alerts() {
 
                                   <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                                       <div style={{ marginBottom: '0.25rem' }}><strong>Source:</strong> {alert.source || 'Unknown'}</div>
+                                      {/* 🟢 FIX: Display the extracted IPs in the UI */}
+                                      <div style={{ marginBottom: '0.25rem' }}>
+                                        <strong>Attacker IP:</strong> <span style={{color: '#F44336'}}>{alert.src_ip || alert.metadata?.src_ip || 'N/A'}</span>
+                                      </div>
+                                      <div style={{ marginBottom: '0.25rem' }}>
+                                        <strong>Target IP:</strong> <span style={{color: '#4CAF50'}}>{alert.dest_ip || alert.metadata?.dest_ip || 'N/A'}</span>
+                                      </div>
+                                      <div style={{ marginBottom: '0.25rem', marginTop: '0.5rem' }}><strong>Alert ID:</strong> {alert.id}</div>
+                                  </div>
+
+                        
+
+                                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                      <div style={{ marginBottom: '0.25rem' }}><strong>Source:</strong> {alert.source || 'Unknown'}</div>
                                       <div style={{ marginBottom: '0.25rem' }}><strong>Alert ID:</strong> {alert.id}</div>
                                   </div>
 

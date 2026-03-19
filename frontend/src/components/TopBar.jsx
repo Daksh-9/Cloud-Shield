@@ -1,13 +1,14 @@
-// frontend/src/components/TopBar.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { notificationService } from '../services/notifications';
+import useSocket from '../hooks/useSocket'; // <-- IMPORTED THE SOCKET HOOK
 
 function TopBar({ user, onToggleSidebar, onToggleTheme, isDarkMode }) {
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [latestAlert, setLatestAlert] = useState(null); // <-- STATE FOR POPUP NOTIFICATIONS
 
-  // Poll for unread notifications every 30 seconds
+  // Poll for historical unread notifications on load
   useEffect(() => {
     const fetchCount = async () => {
       try {
@@ -24,6 +25,28 @@ function TopBar({ user, onToggleSidebar, onToggleTheme, isDarkMode }) {
     return () => clearInterval(interval);
   }, []);
 
+  // --- NEW: LISTEN TO LIVE WEBSOCKET ALERTS ---
+  useSocket((event) => {
+    if (event?.type === 'LOG_UPDATE' && event?.payload?.event_type === 'alert') {
+      // 1. Instantly increment the bell icon count
+      setUnreadCount(prev => prev + 1);
+
+      // 2. Trigger the Toast Popup
+      const alertData = event.payload.alert;
+      setLatestAlert({
+        title: "Security Alert Detected!",
+        signature: alertData?.signature || "Unknown Threat",
+        severity: alertData?.severity || 1,
+        ip: event.payload.src_ip
+      });
+
+      // 3. Hide the popup after 5 seconds
+      setTimeout(() => {
+        setLatestAlert(null);
+      }, 5000);
+    }
+  });
+
   return (
     <div style={{
       height: '64px',
@@ -34,7 +57,8 @@ function TopBar({ user, onToggleSidebar, onToggleTheme, isDarkMode }) {
       justifyContent: 'space-between',
       padding: '0 2rem',
       color: 'var(--text-primary)',
-      transition: 'background-color 0.3s'
+      transition: 'background-color 0.3s',
+      position: 'relative' // Ensure relative positioning for child popups
     }}>
       {/* Left Section: Sidebar Toggle & Brand */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -88,7 +112,10 @@ function TopBar({ user, onToggleSidebar, onToggleTheme, isDarkMode }) {
         {/* Notification Icon */}
         <div 
           style={{ position: 'relative', cursor: 'pointer' }}
-          onClick={() => navigate('/notifications')}
+          onClick={() => {
+            setUnreadCount(0); // Clear on click
+            navigate('/notifications');
+          }}
           title="View Notifications"
         >
           <span style={{ fontSize: '1.2rem' }}>🔔</span>
@@ -130,6 +157,34 @@ function TopBar({ user, onToggleSidebar, onToggleTheme, isDarkMode }) {
           </div>
         </div>
       </div>
+
+      {/* --- NEW: INSTANT TOAST NOTIFICATION UI --- */}
+      {latestAlert && (
+        <div style={{
+          position: 'fixed',
+          top: '80px',
+          right: '20px',
+          backgroundColor: latestAlert.severity >= 2 ? '#ef4444' : '#f59e0b',
+          color: 'white',
+          padding: '1rem',
+          borderRadius: '0.5rem',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+          zIndex: 9999,
+          minWidth: '300px',
+          border: '1px solid rgba(255,255,255,0.2)',
+          transition: 'all 0.3s ease-in-out'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+            <span style={{ fontSize: '1.25rem' }}>🚨</span>
+            <strong style={{ fontSize: '1.1rem' }}>{latestAlert.title}</strong>
+          </div>
+          <div style={{ fontSize: '0.9rem', opacity: 0.95, lineHeight: '1.4' }}>
+            <p style={{ margin: '0 0 4px 0' }}><strong>Signature:</strong> {latestAlert.signature}</p>
+            <p style={{ margin: '0' }}><strong>Source IP:</strong> {latestAlert.ip}</p>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

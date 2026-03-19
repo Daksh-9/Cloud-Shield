@@ -24,69 +24,125 @@ TIERED_IPS = {
 }
 
 PROTOCOLS = ["TCP", "UDP", "ICMP", "HTTP", "DNS"]
-# Add standard ports so the new Bar Chart displays realistic data
 PORTS = [80, 443, 22, 53, 3389, 8080]
+
+# Mock Suricata Rule Signatures
+MOCK_ALERTS = [
+    {
+        "signature": "ET SCAN Nmap UDP Sweep",
+        "signature_id": 2008583,
+        "category": "Attempted Information Leak",
+        "severity": 2
+    },
+    {
+        "signature": "GPL EXPLOIT CodeRed v2 root.exe access",
+        "signature_id": 2100528,
+        "category": "Attempted Administrator Privilege Gain",
+        "severity": 1
+    },
+    {
+        "signature": "ET MALWARE Suspicious User-Agent (1-8)",
+        "signature_id": 2008974,
+        "category": "A Network Trojan was detected",
+        "severity": 1
+    },
+    {
+        "signature": "ET DOS Possible NTP DDoS Inbound Frequent Un-Authed MON_GETLIST",
+        "signature_id": 2017919,
+        "category": "Attempted Denial of Service",
+        "severity": 2
+    }
+]
 
 def get_bytes_for_tier(tier):
     """Generates byte sizes based on the assigned traffic tier."""
     if tier == "high":
-        # 10 MB to 50 MB
         return random.randint(10_000_000, 50_000_000)
     elif tier == "medium":
-        # 1 MB to 5 MB
         return random.randint(1_000_000, 5_000_000)
     else:
-        # 10 KB to 500 KB
         return random.randint(10_000, 500_000)
 
+def get_current_iso_time():
+    """Returns formatted ISO time compatible with backend string comparison."""
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
 def generate_fake_flow():
-    """Generates a payload exactly matching what Suricata produces."""
+    """Generates a standard flow payload."""
     src_ip = random.choice(list(TIERED_IPS.keys()))
     tier = TIERED_IPS[src_ip]
     
-    # FIX: Ensure timestamp ends with "Z" instead of "+00:00" 
-    # so MongoDB string comparison ($gte) works perfectly with the new backend filter.
-    iso_time = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-    
     return {
         "event_type": "flow",
-        "timestamp": iso_time,
+        "timestamp": get_current_iso_time(),
         "proto": random.choice(PROTOCOLS),
         "src_ip": src_ip,
         "dest_ip": "192.168.1.100", 
-        "dest_port": random.choice(PORTS), # FIX: Added dest_port for the new graph
+        "dest_port": random.choice(PORTS),
         "flow": {
             "bytes_toserver": get_bytes_for_tier(tier), 
             "bytes_toclient": get_bytes_for_tier(tier)
         }
     }
 
+def generate_fake_alert():
+    """Generates an alert payload matching a Suricata rule trigger."""
+    src_ip = random.choice(list(TIERED_IPS.keys()))
+    alert_details = random.choice(MOCK_ALERTS)
+    
+    return {
+        "event_type": "alert",
+        "timestamp": get_current_iso_time(),
+        "proto": random.choice(["TCP", "UDP"]),
+        "src_ip": src_ip,
+        "src_port": random.randint(1024, 65535),
+        "dest_ip": "192.168.1.100",
+        "dest_port": random.choice(PORTS),
+        "alert": {
+            "action": "allowed",
+            "gid": 1,
+            "signature_id": alert_details["signature_id"],
+            "rev": 1,
+            "signature": alert_details["signature"],
+            "category": alert_details["category"],
+            "severity": alert_details["severity"]
+        }
+    }
+
 def main():
-    print("🚀 Starting Cloud Shield Tiered Traffic Simulator...")
-    print(f"📡 Sending mock Suricata flow events to {API_URL}")
+    print("🚀 Starting Cloud Shield Tiered Traffic & Alert Simulator...")
+    print(f"📡 Sending mock Suricata events to {API_URL}")
     print("Press Ctrl+C to stop.\n")
 
     session = requests.Session()
 
     try:
         while True:
-            payload = generate_fake_flow()
+            # 20% chance to generate an ALERT instead of a standard FLOW
+            is_alert = random.random() < 0.2 
+            payload = generate_fake_alert() if is_alert else generate_fake_flow()
+
             try:
                 response = session.post(API_URL, json=payload)
                 if response.status_code in [200, 201]:
-                    total_bytes = payload["flow"]["bytes_toserver"] + payload["flow"]["bytes_toclient"]
-                    mb_sent = total_bytes / (1024 * 1024)
                     ip = payload['src_ip']
-                    proto = payload['proto']
                     tier = TIERED_IPS[ip].upper()
                     
-                    print(f"✅ [{tier}] Sent flow: {ip:<15} via {proto:<5} ({mb_sent:.2f} MB)")
+                    if is_alert:
+                        sig = payload["alert"]["signature"]
+                        sev = payload["alert"]["severity"]
+                        print(f"🚨 [ALERT - Sev {sev}] {ip:<15} triggered: {sig}")
+                    else:
+                        total_bytes = payload["flow"]["bytes_toserver"] + payload["flow"]["bytes_toclient"]
+                        mb_sent = total_bytes / (1024 * 1024)
+                        proto = payload['proto']
+                        print(f"✅ [{tier}] Sent flow: {ip:<15} via {proto:<5} ({mb_sent:.2f} MB)")
                 else:
                     print(f"⚠️ API Error: {response.status_code} - {response.text}")
             except requests.exceptions.ConnectionError:
                 print("❌ Connection failed! Is the FastAPI backend running on port 8000?")
             
-            # Sleep between 1 to 3 seconds to simulate realistic, pulsating traffic
+            # Sleep between 1 to 3 seconds to simulate realistic traffic
             time.sleep(random.uniform(1.0, 3.0))
 
     except KeyboardInterrupt:

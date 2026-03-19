@@ -71,6 +71,10 @@ async def create_alert(
                     "created_at": response["created_at"].isoformat()
                     if isinstance(response["created_at"], datetime)
                     else str(response["created_at"]),
+                    
+                    # 🟢 FIX: Attach IPs from metadata so the Dashboard table can display them
+                    "src_ip": metadata.get("src_ip") if metadata else "Unknown",
+                    "dest_ip": metadata.get("dest_ip") if metadata else "Unknown"
                 },
             }
         )
@@ -204,4 +208,3 @@ async def get_alert_count(
         query["alert_type"] = alert_type
     
     return await db.alerts.count_documents(query)
-

@@ -34,6 +34,38 @@ async def _write_file_async(path: Path, content: str) -> None:
     await asyncio.to_thread(_write)
 
 
+async def cleanup_old_backups(backup_dir: Path, collection_name: str, keep_latest: int = 3) -> None:
+    """
+    Deletes old backup files for a specific collection, keeping only the most recent 'keep_latest' files.
+    """
+    def _cleanup() -> None:
+        if not backup_dir.exists():
+            return
+            
+        # Find all backup files for this collection
+        pattern = f"{collection_name}-*.json"
+        backup_files = list(backup_dir.glob(pattern))
+        
+        if len(backup_files) <= keep_latest:
+            return
+            
+        # Sort files alphabetically. Since the filename includes YYYYMMDD-HHMMSS,
+        # alphabetical sorting naturally orders them from oldest to newest.
+        backup_files.sort(key=lambda p: p.name)
+        
+        # Identify files to delete (all except the last 'keep_latest')
+        files_to_delete = backup_files[:-keep_latest]
+        
+        for file_path in files_to_delete:
+            try:
+                file_path.unlink()
+                logger.info("Cleaned up old backup: %s", file_path)
+            except OSError as exc:
+                logger.error("Error deleting old backup %s: %s", file_path, exc)
+
+    await asyncio.to_thread(_cleanup)
+
+
 async def export_collection(
     collection_name: str,
     backup_dir: Path,
@@ -94,6 +126,10 @@ async def run_backup_job() -> Dict[str, Any]:
     for name in collections_to_backup:
         try:
             path = await export_collection(name, backup_root)
+            
+            # Automatically clean up old backups for this collection, keeping the latest 3
+            await cleanup_old_backups(backup_root, name, keep_latest=3)
+            
             results["success"].append({"collection": name, "path": str(path)})
         except Exception as exc:
             # Error already logged in export_collection; track minimal detail here.
@@ -106,4 +142,3 @@ async def run_backup_job() -> Dict[str, Any]:
     )
 
     return results
-

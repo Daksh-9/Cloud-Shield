@@ -11,6 +11,7 @@ from app.database.connection import get_database
 from app.services.log_service import create_log
 from app.services.realtime import broadcast_event
 from app.config import settings
+from app.services.alert_service import create_alert
 
 # --- Event Parsing Functions ---
 
@@ -70,6 +71,7 @@ async def parse_and_store_suricata_event(eve_json: Dict[str, Any]) -> dict:
         else:
             log_severity = "info"
         
+        # 1. Create the system log
         await create_log(
             source="suricata",
             log_type="alert",
@@ -82,6 +84,23 @@ async def parse_and_store_suricata_event(eve_json: Dict[str, Any]) -> dict:
             },
             timestamp=timestamp
         )
+
+        # 2. 🟢 CORRECTED: Save the Alert to the alerts collection without crashing
+        try:
+            await create_alert(
+                title=alert_data.get('signature', 'Unknown Suricata Alert'),
+                description=f"Category: {alert_data.get('category', 'N/A')}",
+                severity=log_severity,
+                alert_type="suricata",  # <-- REQUIRED ARGUMENT
+                source="suricata",
+                metadata={              # <-- IPs MUST BE IN METADATA
+                    "src_ip": eve_json.get("src_ip"),
+                    "dest_ip": eve_json.get("dest_ip"),
+                    "raw_data": eve_json
+                }
+            )
+        except Exception as e:
+            print(f"Failed to save alert to database: {e}")
 
     # --- Local live traffic log + real-time broadcast ---
     try:
@@ -107,6 +126,10 @@ async def parse_and_store_suricata_event(eve_json: Dict[str, Any]) -> dict:
             if isinstance(flow, dict):
                 payload["bytes_toserver"] = flow.get("bytes_toserver", 0)
                 payload["bytes_toclient"] = flow.get("bytes_toclient", 0)
+
+            # Attach alert details to the WebSocket payload
+            if event_type == "alert":
+                payload["alert"] = eve_json.get("alert", {})
 
             await broadcast_event(
                 {
@@ -226,7 +249,7 @@ async def sync_rules_to_disk() -> bool:
         return False
 
 
-# --- NEW: Process Management Variables & Functions ---
+# --- Process Management Variables & Functions ---
 _suricata_process: Optional[subprocess.Popen] = None
 
 async def start_suricata_subprocess() -> bool:
@@ -235,9 +258,10 @@ async def start_suricata_subprocess() -> bool:
     
     print("\n--- [SYSTEM] Attempting to start Suricata Subprocess ---")
     
-    # Always sync rules to disk before starting
-    await sync_rules_to_disk()
-    print(f"--- [SYSTEM] Rules synced to {settings.SURICATA_RULES_PATH} ---")
+    # [FIX]: Commented out sync_rules_to_disk() to prevent wiping the local rules file
+    # managed by file_rule_service.py on startup.
+    # await sync_rules_to_disk()
+    # print(f"--- [SYSTEM] Rules synced to {settings.SURICATA_RULES_PATH} ---")
 
     # If it's already running, don't start a new one (poll() returns None if running)
     if _suricata_process and _suricata_process.poll() is None:
@@ -313,9 +337,12 @@ async def reload_suricata() -> dict:
     Reloads Suricata by killing the current subprocess and starting a new one.
     """
     print("\n--- [SYSTEM] Reloading Suricata Subprocess ---")
-    synced = await sync_rules_to_disk()
-    if not synced:
-        return {"status": "error", "message": "Failed to sync rules. Aborting reload."}
+    
+    # [FIX]: Commented out sync_rules_to_disk() check to prevent wiping the local rules file
+    # managed by file_rule_service.py when reloading the engine.
+    # synced = await sync_rules_to_disk()
+    # if not synced:
+    #     return {"status": "error", "message": "Failed to sync rules. Aborting reload."}
 
     try:
         # Stop the existing process
