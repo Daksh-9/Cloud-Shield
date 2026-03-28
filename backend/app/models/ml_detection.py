@@ -1,7 +1,7 @@
 """
 ML detection results model and schemas.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
 from bson import ObjectId
@@ -74,7 +74,8 @@ class MLDetectionInDB:
         self.metadata = metadata or {}
         self.related_log_id = related_log_id
         self.related_alert_id = related_alert_id
-        self.created_at = datetime.utcnow()
+        # FIXED: Use timezone-aware UTC datetime so frontend parses it correctly
+        self.created_at = datetime.now(timezone.utc)
 
     def to_dict(self):
         """Convert to dictionary for MongoDB."""
@@ -104,6 +105,6 @@ class MLDetectionInDB:
         detection.metadata = data.get("metadata", {})
         detection.related_log_id = data.get("related_log_id")
         detection.related_alert_id = data.get("related_alert_id")
-        detection.created_at = data.get("created_at", datetime.utcnow())
+        # FIXED: Use timezone-aware fallback
+        detection.created_at = data.get("created_at", datetime.now(timezone.utc))
         return detection
-

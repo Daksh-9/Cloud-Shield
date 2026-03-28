@@ -26,7 +26,7 @@ const Dashboard = () => {
     title: alert.title || alert.message || alert.alert_type || 'Unknown Alert',
     severity: (alert.severity || 'Info').toLowerCase(),
     status: alert.status || 'open',
-    // 🟢 FIX: Check root (for WebSocket) OR metadata (for REST API load)
+    // Check root (for WebSocket) OR metadata (for REST API load)
     src: alert.src_ip || alert.metadata?.src_ip || 'Unknown',
     dest: alert.dest_ip || alert.metadata?.dest_ip || 'Unknown'
   });
@@ -129,30 +129,37 @@ const Dashboard = () => {
   }, [recentAlerts]);
 
   const trendData = useMemo(() => {
-    // Group recent alerts into hourly buckets for the trend graph
     const buckets = {};
     const now = new Date();
     
-    // Create empty buckets for the last 6 hours to ensure a continuous line
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 60 * 60 * 1000);
-      const hourStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      buckets[hourStr] = { time: hourStr, critical: 0, high: 0, medium: 0, low: 0 };
+    // 1. Create empty buckets for the last 15 minutes (Minute-by-Minute)
+    for (let i = 14; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 60 * 1000);
+      
+      // 24-hour format ensures perfect string sorting (e.g., "14:05" before "14:06")
+      const sortKey = d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+      // User-friendly format for the axis (e.g., "2:05 PM")
+      const display = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      buckets[sortKey] = { time: display, sortKey, critical: 0, high: 0, medium: 0, low: 0 };
     }
     
+    // 2. Fill buckets with actual data
     recentAlerts.forEach(a => {
       const d = new Date(a.time);
-      const hourStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      if (!buckets[hourStr]) {
-        buckets[hourStr] = { time: hourStr, critical: 0, high: 0, medium: 0, low: 0 };
-      }
-      const sev = a.severity;
-      if (buckets[hourStr][sev] !== undefined) {
-        buckets[hourStr][sev]++;
+      const sortKey = d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+      
+      // Only plot alerts that fall within our recent 15-min timeline
+      if (buckets[sortKey]) {
+        const sev = (a.severity || 'info').toLowerCase();
+        if (buckets[sortKey][sev] !== undefined) {
+          buckets[sortKey][sev]++;
+        }
       }
     });
 
-    return Object.values(buckets).sort((a, b) => a.time.localeCompare(b.time));
+    // 3. Sort chronologically and return
+    return Object.values(buckets).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   }, [recentAlerts]);
 
 
@@ -253,6 +260,10 @@ const Dashboard = () => {
                       <stop offset="5%" stopColor="#FF9800" stopOpacity={0.3}/>
                       <stop offset="95%" stopColor="#FF9800" stopOpacity={0}/>
                     </linearGradient>
+                    <linearGradient id="colorMedium" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#FFC107" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#FFC107" stopOpacity={0}/>
+                    </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
                   <XAxis dataKey="time" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
@@ -261,6 +272,7 @@ const Dashboard = () => {
                   <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}/>
                   <Area type="monotone" dataKey="critical" stroke="#F44336" fillOpacity={1} fill="url(#colorCritical)" strokeWidth={2} />
                   <Area type="monotone" dataKey="high" stroke="#FF9800" fillOpacity={1} fill="url(#colorHigh)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="medium" stroke="#FFC107" fillOpacity={1} fill="url(#colorMedium)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (

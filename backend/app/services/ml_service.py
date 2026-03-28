@@ -4,7 +4,6 @@ ML service for inference and detection result storage.
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 from bson import ObjectId
-import numpy as np
 
 from app.database.connection import get_database
 from app.utils.ml_model_loader import get_model_loader
@@ -20,14 +19,6 @@ async def run_inference(
 ) -> Dict[str, Any]:
     """
     Run ML inference on input data.
-    
-    Args:
-        data: Input data for feature extraction
-        model_name: Specific model to use (optional)
-        auto_create_alert: Automatically create alert if threat detected
-    
-    Returns:
-        Dictionary with prediction results
     """
     # Extract features
     features = FeatureExtractor.extract_from_generic(data)
@@ -36,37 +27,50 @@ async def run_inference(
     loader = get_model_loader()
     
     try:
-        # Convert features to vector
-        feature_vector = FeatureExtractor.to_feature_vector(features)
+        # Convert features to vector (returns a Pandas DataFrame for complex models)
+        feature_vector = FeatureExtractor.to_feature_vector(features, model_name=model_name)
         
         # Make prediction
         prediction, confidence = loader.predict(feature_vector, model_name)
         
         # Determine detection type based on prediction
-        prediction_str = str(prediction)
-        if "malware" in prediction_str.lower() or "virus" in prediction_str.lower():
-            detection_type = "malware"
-        elif "intrusion" in prediction_str.lower() or "attack" in prediction_str.lower():
-            detection_type = "intrusion"
-        elif "anomaly" in prediction_str.lower() or "suspicious" in prediction_str.lower():
+        # Strip brackets in case prediction is returned as a formatted string like "[0]"
+        prediction_str = str(prediction).lower().replace('[', '').replace(']', '').strip()
+        
+        # Parse numerical outputs from the model into human-readable classes
+        if "benign" in prediction_str or "normal" in prediction_str or prediction_str in ["0", "0.0"]:
+            detection_type = "benign"
+            prediction_display = "Benign Traffic"
+        elif "suspicious" in prediction_str or "anomaly" in prediction_str or "ddos" in prediction_str or prediction_str in ["1", "1.0"]:
             detection_type = "anomaly"
+            prediction_display = "DDoS Attack Detected"
+        elif "malware" in prediction_str or "virus" in prediction_str:
+            detection_type = "malware"
+            prediction_display = "Malware Detected"
+        elif "intrusion" in prediction_str or "attack" in prediction_str:
+            detection_type = "intrusion"
+            prediction_display = "Intrusion Attempt"
         else:
             detection_type = "unknown"
+            prediction_display = str(prediction).title()
         
         # Store detection result
         detection = await store_detection(
             detection_type=detection_type,
             confidence=float(confidence),
-            prediction=prediction_str,
+            prediction=prediction_display,
             features=features,
             model_name=model_name or loader.default_model_name or "default"
         )
         
         # Create alert if threat detected and auto_create_alert is True
         alert_id = None
-        if auto_create_alert and confidence > 0.7 and detection_type != "unknown":
+        # Ensure benign and unknown traffic never trigger alerts
+        is_threat = detection_type not in ["benign", "unknown"]
+        
+        if auto_create_alert and confidence > 0.7 and is_threat:
             alert = await create_alert(
-                title=f"ML Detection: {prediction_str}",
+                title=f"ML Detection: {prediction_display}",
                 description=f"Machine learning model detected {detection_type} with {confidence:.2%} confidence",
                 severity="high" if confidence > 0.9 else "medium",
                 alert_type=detection_type,
@@ -84,7 +88,7 @@ async def run_inference(
             await update_detection_alert(detection["id"], alert_id)
         
         return {
-            "prediction": prediction_str,
+            "prediction": prediction_display,
             "confidence": float(confidence),
             "detection_type": detection_type,
             "model_name": model_name or loader.default_model_name or "default",
@@ -94,7 +98,7 @@ async def run_inference(
         }
     
     except Exception as e:
-        raise Exception(f"ML inference failed: {str(e)}")
+        raise Exception(f"ML inference processing failed: {str(e)}")
 
 
 async def store_detection(
@@ -218,4 +222,3 @@ async def get_detection_by_id(detection_id: str) -> Optional[Dict[str, Any]]:
         }
     except Exception:
         return None
-

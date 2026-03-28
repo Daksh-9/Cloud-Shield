@@ -14,6 +14,9 @@ from app.services.suricata_service import (
 from app.database.connection import get_database
 from app.services.realtime import broadcast_event
 
+# 🟢 IMPORT THE ALERT SERVICE
+from app.services.alert_service import create_alert
+
 router = APIRouter(prefix="/suricata", tags=["suricata"])
 
 @router.get("/status")
@@ -58,7 +61,6 @@ async def ingest_suricata_event(
     """
     db = get_database()
     
-    # 1. Format the event for MongoDB
     event_type = event_data.get("event_type", "unknown")
     timestamp_str = event_data.get("timestamp")
     
@@ -77,34 +79,58 @@ async def ingest_suricata_event(
         "created_at": datetime.utcnow()
     }
     
-    # 2. Insert into database
+    # 1. Insert the raw event into the logs database
     result = await db.suricata_events.insert_one(document)
+    log_id = str(result.inserted_id)
     
-    # 3. Format response for real-time broadcast
-    broadcast_payload = {
-        "id": str(result.inserted_id),
-        "event_type": event_type,
-        "timestamp": timestamp.isoformat(),
-        "raw_event": event_data
-    }
-    
-    # 4. Broadcast to WebSocket clients
-    background_tasks.add_task(
-        broadcast_event,
-        {
-            "type": "LOG_UPDATE", 
-            "payload": {
-                 "id": broadcast_payload["id"],
-                 "severity": event_type.lower(), 
-                 "message": f"Suricata {event_type.upper()}: {event_data.get('src_ip', 'Unknown')} -> {event_data.get('dest_ip', 'Unknown')}",
-                 "timestamp": broadcast_payload["timestamp"],
-                 "raw_event": event_data, 
-                 "event_type": event_type
+    # 2. SEPARATE LOGIC: Is it an Alert or just Traffic?
+    if event_type == "alert":
+        alert_info = event_data.get("alert", {})
+        
+        # Suricata severity is usually 1 (High) to 4 (Low). Let's map it to your Dashboard's string severities.
+        suri_sev = alert_info.get("severity", 3)
+        if suri_sev == 1:
+            severity = "critical"
+        elif suri_sev == 2:
+            severity = "high"
+        elif suri_sev == 3:
+            severity = "medium"
+        else:
+            severity = "low"
+
+        # 🟢 Trigger the alert_service, which handles DB insertion AND broadcasts the ALERT_NEW WebSocket event
+        await create_alert(
+            title=alert_info.get("signature", "Unknown Suricata Alert"),
+            description=f"Category: {alert_info.get('category', 'Uncategorized')}",
+            severity=severity,
+            alert_type="suricata",
+            source="Suricata NIDS",
+            metadata={
+                "src_ip": event_data.get("src_ip", "Unknown"),
+                "dest_ip": event_data.get("dest_ip", "Unknown"),
+                "dest_port": event_data.get("dest_port"),
+                "signature_id": alert_info.get("signature_id")
+            },
+            related_log_ids=[log_id]
+        )
+    else:
+        # It's just a normal flow, DNS, or TLS log. Broadcast as a standard LOG_UPDATE for the raw event stream.
+        background_tasks.add_task(
+            broadcast_event,
+            {
+                "type": "LOG_UPDATE", 
+                "payload": {
+                     "id": log_id,
+                     "severity": "info", 
+                     "message": f"Suricata {event_type.upper()}: {event_data.get('src_ip', 'Unknown')} -> {event_data.get('dest_ip', 'Unknown')}",
+                     "timestamp": timestamp.isoformat(),
+                     "raw_event": event_data, 
+                     "event_type": event_type
+                }
             }
-        }
-    )
+        )
     
-    return {"status": "success", "id": str(result.inserted_id)}
+    return {"status": "success", "id": log_id}
 
 
 @router.get("/events")
